@@ -8,6 +8,8 @@ const config = require('../config')
 const { getOwnEndpoint, getCreatorNodeEndpoints, ensureStorageMiddleware } = require('../middlewares')
 const { getIPFSPeerId } = require('../utils')
 
+const SyncHistoryAggregator = require('../snapbackSM/syncHistoryAggregator')
+
 // Dictionary tracking currently queued up syncs with debounce
 const syncQueue = {}
 
@@ -165,8 +167,10 @@ module.exports = function (app) {
 
     // Disable multi wallet syncs for now since in below redis logic is broken for multi wallet case
     if (walletPublicKeys.length === 0) {
+      await SyncHistoryAggregator.recordSyncFail(req.logContext)
       return errorResponseBadRequest(`Must provide one wallet param`)
     } else if (walletPublicKeys.length > 1) {
+      await SyncHistoryAggregator.recordSyncFail(req.logContext)
       return errorResponseBadRequest(`Multi wallet syncs are temporarily disabled`)
     }
 
@@ -179,8 +183,10 @@ module.exports = function (app) {
     if (immediate) {
       let errorObj = await _nodesync(serviceRegistry, req.logger, walletPublicKeys, creatorNodeEndpoint, req.body.blockNumber)
       if (errorObj) {
+        await SyncHistoryAggregator.recordSyncFail(req.logContext)
         return errorResponseServerError(errorObj)
       } else {
+        await SyncHistoryAggregator.recordSyncSuccess(req.logContext)
         return successResponse()
       }
     }
@@ -201,7 +207,18 @@ module.exports = function (app) {
       req.logger.info('set timeout for', wallet, 'time', Date.now())
     }
 
+    await SyncHistoryAggregator.recordSyncSuccess(req.logContext)
     return successResponse()
+  }))
+
+  app.get('/sync_history', handleResponse(async (req, res) => {
+    const aggregateSyncData = await SyncHistoryAggregator.getAggregateSyncData(req.logContext)
+    const latestSyncData = await SyncHistoryAggregator.getLatestSyncData(req.logContext)
+
+    return successResponse({
+      aggregateSyncData: JSON.parse(aggregateSyncData),
+      latestSyncData: JSON.parse(latestSyncData)
+    })
   }))
 
   /** Checks if node sync is in progress for wallet. */
