@@ -177,7 +177,7 @@ def index_blocks(self, db, blocks_list):
         block_number = block.number
         block_timestamp = block.timestamp
         logger.info(
-            f"index.py | index_blocks | {self.request.id} | block {block.number} - {block_index}/{num_blocks}"
+            f"index.py | index_blocks | {self.request.id} | block {block.number} ({block.hash}) - {block_index}/{num_blocks}"
         )
 
         # Handle each block in a distinct transaction
