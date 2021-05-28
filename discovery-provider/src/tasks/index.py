@@ -177,8 +177,9 @@ def index_blocks(self, db, blocks_list):
         block_number = block.number
         block_timestamp = block.timestamp
         logger.info(
-            f"index.py | index_blocks | {self.request.id} | block {block.number} ({block.hash}) - {block_index}/{num_blocks}"
+            f"index.py | index_blocks | {self.request.id} | block {block.number} ({block.hash.decode('utf-8')}) - {block_index}/{num_blocks}"
         )
+        logger.info(f"index.py | {block.transactions}")
 
         # Handle each block in a distinct transaction
         with db.scoped_session() as session:
