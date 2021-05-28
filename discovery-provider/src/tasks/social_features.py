@@ -344,11 +344,13 @@ def add_follow(
 ):
     txhash = update_task.web3.toHex(tx_receipt.transactionHash)
     new_follow_events = social_feature_factory_contract.events.UserFollowAdded().processReceipt(tx_receipt)
+    logger.error(f"index.py | social_features | TEST: {new_follow_events}")
 
     for entry in new_follow_events:
         event_args = entry["args"]
         follower_user_id = event_args._followerUserId
         followee_user_id = event_args._followeeUserId
+        logger.error(f"index.py | social_features | TEST: {entry}")
 
         if (follower_user_id in follow_state_changes) and (followee_user_id in follow_state_changes[follower_user_id]):
             follow_state_changes[follower_user_id][followee_user_id].is_delete = False
