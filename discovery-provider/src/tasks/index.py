@@ -217,8 +217,17 @@ def index_blocks(self, db, blocks_list):
             # Parse tx events in each block
             for tx in sorted_txs:
                 tx_hash = web3.toHex(tx["hash"])
+                tx_block_hash = web3.toHex(tx["blockHash"])
                 tx_target_contract_address = tx["to"]
                 tx_receipt = tx_receipt_dict[tx_hash]
+
+                # Skip if tx does not match block hash
+                if tx_block_hash != block_model.blockhash:
+                    logger.info(f"index.py | "
+                    f"Skipping tx {tx_hash} due to inconsistent blockhash between"
+                    f"tx_block_hash({tx_block_hash}"
+                    f"block_hash({block_model.blockhash}")
+                    continue
 
                 # Skip in case a transaction targets zero address
                 if tx_target_contract_address == zero_address:
