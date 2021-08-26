@@ -55,7 +55,12 @@ npm link
 # link service-commands to libs
 cd $PROTOCOL_DIR/
 cd service-commands
+npm link
 npm link @audius/libs
+
+cd $PROTOCOL_DIR/
+cd mad-dog/
+npm run link-deps
 
 cd $PROTOCOL_DIR/
 cd ..
