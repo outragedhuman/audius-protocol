@@ -25,14 +25,14 @@
 		"id": "referrals",
 		"type": "aggregate",
 		"amount": "1",
-		"active": false,
+		"active": true,
 		"step_count": 5
 	},
 	{
 		"id": "referred",
 		"type": "boolean",
 		"amount": "1",
-		"active": false
+		"active": true
 	},
 	{
 		"id": "connect-verified",
@@ -44,6 +44,6 @@
 		"id": "mobile-install",
 		"type": "boolean",
 		"amount": "10",
-		"active": false
+		"active": true
 	}
 ]
