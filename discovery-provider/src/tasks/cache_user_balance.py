@@ -264,16 +264,27 @@ def refresh_user_ids(
 
                 logger.warning(f"cache_user_balance.py | 6")
                 # update the balance on the user model
-                logger.warning(f"user_id: {user_id}, owner_wallet_balance: {owner_wallet_balance}, associated_wallets {associated_balance}, waudio {waudio_balance}, associated_sol {associated_sol_balance}")
+                # logger.warning(f"user_id: {user_id}, owner_wallet_balance: {owner_wallet_balance}, associated_wallets {associated_balance}, waudio {waudio_balance}, associated_sol {associated_sol_balance}")
+                logger.warning(f"cache_user_balance.py | user_balance")
+                logger.warning(f"cache_user_balance.py | {user_balances}")
                 user_balance = user_balances[user_id]
+                logger.warning(f"cache_user_balance.py | 7")
+                logger.warning(f"cache_user_balance.py | {user_id}")
                 user_balance.balance = owner_wallet_balance
+                logger.warning(f"cache_user_balance.py | 8")
+                logger.warning(f"cache_user_balance.py | {owner_wallet_balance}")
                 user_balance.associated_wallets_balance = str(associated_balance)
+                logger.warning(f"cache_user_balance.py | 9")
+                logger.warning(f"cache_user_balance.py | {associated_balance}")
                 user_balance.waudio = waudio_balance
+                logger.warning(f"cache_user_balance.py | 10")
+                logger.warning(f"cache_user_balance.py | {waudio_balance}")
                 user_balance.associated_sol_wallets_balance = str(
                     associated_sol_balance
                 )
+                logger.warning(f"cache_user_balance.py | 11")
+                logger.warning(f"cache_user_balance.py | {associated_sol_balance}")
 
-                logger.warning(f"cache_user_balance.py | 7")
 
             except Exception as e:
                 logger.error(
