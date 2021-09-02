@@ -165,7 +165,7 @@ def refresh_user_ids(
         # Combine query results for user bank, associated wallets,
         # and primary owner wallet into a single metadata list
         user_id_metadata: Dict[int, UserWalletMetadata] = {}
-
+        logger.warning(f"cache_user_balance.py | 1")
         for user in user_associated_wallet_query:
             user_id, user_wallet, associated_wallet, wallet_chain = user
             if not user_id in user_id_metadata:
@@ -184,6 +184,8 @@ def refresh_user_ids(
                         wallet_chain  # type: ignore
                     ].append(associated_wallet)
 
+
+        # we def get at least here
         logger.info(
             f"cache_user_balance.py | fetching for {len(user_associated_wallet_query)} users: {user_ids}"
         )
@@ -191,6 +193,7 @@ def refresh_user_ids(
         # Fetch balances
         for user_id, wallets in user_id_metadata.items():
             try:
+                logger.warning(f"cache_user_balance.py | 1")
                 owner_wallet = wallets["owner_wallet"]
                 owner_wallet = eth_web3.toChecksumAddress(owner_wallet)
                 owner_wallet_balance = token_contract.functions.balanceOf(
@@ -201,6 +204,7 @@ def refresh_user_ids(
                 associated_sol_balance = 0
 
                 if "associated_wallets" in wallets:
+                    logger.warning(f"cache_user_balance.py | 2")
                     for wallet in wallets["associated_wallets"]["eth"]:
                         wallet = eth_web3.toChecksumAddress(wallet)
                         balance = token_contract.functions.balanceOf(wallet).call()
@@ -216,6 +220,7 @@ def refresh_user_ids(
                             balance + delegation_balance + stake_balance
                         )
                     for wallet in wallets["associated_wallets"]["sol"]:
+                        logger.warning(f"cache_user_balance.py | 3")
                         try:
                             root_sol_account = PublicKey(wallet)
                             derived_account, _ = PublicKey.find_program_address(
@@ -245,17 +250,21 @@ def refresh_user_ids(
                             )
 
                 if wallets["bank_account"] is not None:
+                    logger.warning(f"cache_user_balance.py | 4")
                     if waudio_token is None:
                         logger.error(
                             "cache_user_balance.py | Missing Required SPL Confirguration"
                         )
                     else:
+                        logger.warning(f"cache_user_balance.py | 5")
                         bal_info = waudio_token.get_balance(
                             PublicKey(wallets["bank_account"])
                         )
                         waudio_balance = bal_info["result"]["value"]["amount"]
 
+                logger.warning(f"cache_user_balance.py | 6")
                 # update the balance on the user model
+                logger.warning(f"user_id: {user_id}, owner_wallet_balance: {owner_wallet_balance}, associated_wallets {associated_balance}, waudio {waudio_balance}, associated_sol {associated_sol_balance}")
                 user_balance = user_balances[user_id]
                 user_balance.balance = owner_wallet_balance
                 user_balance.associated_wallets_balance = str(associated_balance)
@@ -263,6 +272,8 @@ def refresh_user_ids(
                 user_balance.associated_sol_wallets_balance = str(
                     associated_sol_balance
                 )
+
+                logger.warning(f"cache_user_balance.py | 7")
 
             except Exception as e:
                 logger.error(
