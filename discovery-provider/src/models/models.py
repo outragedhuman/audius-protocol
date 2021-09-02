@@ -31,6 +31,8 @@ logger = logging.getLogger(__name__)
 
 # field_type is the sqlalchemy type from the model object
 def validate_field_helper(field, value, model, field_type):
+    print("FIELD HELPER", field, value, model, type(field_type))
+    return "waffle"
     # TODO: need to write custom validator for these datetime fields as jsonschema
     # validates datetime in format 2018-11-13T20:20:39+00:00, not a format we use
     # also not totally necessary as these fields are created server side
@@ -43,16 +45,18 @@ def validate_field_helper(field, value, model, field_type):
     # the fix is to replace those characters with empty with empty string
     # https://stackoverflow.com/questions/1347646/postgres-error-on-insert-error-invalid-byte-sequence-for-encoding-utf8-0x0
     if type(field_type) in (String, Text) and value:
-        value = value.encode("utf-8", "ignore").decode("utf-8", "ignore")
-        value = value.replace("\x00", "")
+        # value = value.encode("utf-8", "ignore").decode("utf-8", "ignore")
+        # value = value.replace("\x00", "")
+        value = "pancake"
 
-    to_validate = {field: value}
-    try:
-        ModelValidator.validate(to_validate=to_validate, model=model, field=field)
-    except ValidationError as e:
-        value = get_default_value(field, value, model, e)
-    except BaseException as e:
-        logger.error(f"Validation failed: {e}")
+    if model:
+        to_validate = {field: value}
+        try:
+            ModelValidator.validate(to_validate=to_validate, model=model, field=field)
+        except ValidationError as e:
+            value = get_default_value(field, value, model, e)
+        except BaseException as e:
+            logger.error(f"Validation failed: {e}")
 
     return value
 
@@ -97,6 +101,97 @@ def get_fields_to_validate(model):
     return fields
 
 
+class ValidatedBase(Base):
+    """
+    A wrapper around the declarative Base that enables model validation.
+    Although not strictly required, any UGC that flows through discovery
+    deserves proper string sanitization, and inheriting from ValidatedBase
+    is likely the way to go.
+
+    Performs generic field validation and field validation against a json schema
+    model if provided.
+    """
+
+    # Define this as an abstract class using sqlalchemy's __abstract__ builtin.
+    __abstract__ = True
+
+    # Allow descendants to set the json schema they wish to adhere to
+    __json_schema_model_name__ = None
+
+    # @validates("string_column")
+    # def validate_field(self, field, value):
+    #     print(self, field, value)
+    #     # print(getattr(self.__table__, field))
+    #     return validate_field_helper(field, value, "Users", String)
+
+    def __init__(self, *args, **kwargs):
+        for name in self.__table__.columns.keys():
+
+            def validate_field(self, field, value):
+                print(field, value)
+                return validate_field_helper(
+                    field,
+                    value,
+                    self.__json_schema_model_name__,
+                    getattr(self, field).type,
+                )
+
+            self.__mapper__.validators = self.__mapper__.validators.union(
+                {
+                    name: (
+                        validate_field,
+                        {"include_removes": False, "include_backrefs": True},
+                    )
+                }
+            )
+            #
+            # column_name = name.split('.')[0]
+            print(name)
+
+            # @validates(name)
+            # def validate_field(self, field, value):
+            #     print(field, value)
+            #     return validate_field_helper(
+            #         field,
+            #         value,
+            #         self.__json_schema_model_name__,
+            #         getattr(self, field).type,
+            #     )
+
+            # @validates("string_column")
+            # def validate_field(self, field, value):
+            #     print(self, field, value)
+            #     # print(getattr(self.__table__, field))
+            #     # return validate_field_helper(field, value, "Users", String)
+            #     return "529318"
+
+            # setattr(
+            #     self,
+            #     f"validate_{name}",
+            #     validates(name)(lambda x: print(x)),
+            # )
+            # for name in method.__sa_validators__:
+            # if name in self.validators:
+            #     raise sa_exc.InvalidRequestError(
+            #         "A validation function for mapped "
+            #         "attribute %r on mapper %s already exists."
+            #         % (name, self)
+            #     )
+            # self.validators = self.validators.union(
+            #     {name: (method, validation_opts)}
+            # )
+            # print("asdf", self.__mapper__.validators)
+
+        # print(self.__class__.validate_string_column)
+        Base.__init__(self, *args, **kwargs)
+        # super().__init__()
+
+    # setattr(Base, "asdf", lambda x: 5)
+
+
+# print(dir(ValidatedBase))
+
+
 class BlockMixin:
     # pylint: disable=property-with-parameters
     @declared_attr
@@ -110,7 +205,7 @@ class BlockMixin:
 
 
 # inherits from BlockMixin
-class Block(Base, BlockMixin):
+class Block(ValidatedBase, BlockMixin):
     __tablename__ = "blocks"
 
     def __repr__(self):
@@ -359,7 +454,9 @@ class Playlist(Base):
     # unpacking args into @validates
     @validates(*fields)
     def validate_field(self, field, value):
-        return validate_field_helper(field, value, "Playlist", getattr(Playlist, field).type)
+        return validate_field_helper(
+            field, value, "Playlist", getattr(Playlist, field).type
+        )
 
     def __repr__(self):
         return f"<Playlist(blockhash={self.blockhash},\
