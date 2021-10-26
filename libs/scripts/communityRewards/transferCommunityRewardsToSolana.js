@@ -3,7 +3,7 @@ import axios from 'axios'
 // const WormholeSDK = require('@certusone/wormhole-sdk')
 // import { getSignedVAA } from '@certusone/wormhole-sdk'
 const EthRewardManagerABI = require('../../eth-contracts/ABIs/EthRewardsManager.json').abi 
-// import { WormholeSDK } from '@certusone/wormhole-sdk'
+import { WormholeSDK } from '@certusone/wormhole-sdk'
 
 /*
 Script that has no internal dependencies outside of web3, solanaWeb3, certusOne SDK to initialize and transfer
