@@ -1,5 +1,5 @@
 import logging
-from flask import redirect
+from flask import redirect, request
 from flask_restx import Resource, Namespace, reqparse
 from src.api.v1.helpers import abort_bad_request_param, abort_not_found
 from src.api.v1.utils.resolve_url import resolve_url
@@ -32,7 +32,10 @@ class Resolve(Resource):
         audius.co URL.
         Tracks, Playlists, and Users are supported.
         """
+        logger.info("raymont")
+        logger.info(request.headers)
         args = resolve_route_parser.parse_args()
+        logger.info(args)
         url = args.get("url")
         if not url:
             abort_bad_request_param("url", ns)
