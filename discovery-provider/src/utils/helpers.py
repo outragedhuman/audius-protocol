@@ -19,6 +19,9 @@ from src import exceptions
 
 from . import multihash
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 def get_ip(request_obj):
     """Gets the IP address from a request using the X-Forwarded-For header if present"""

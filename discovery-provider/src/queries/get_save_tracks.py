@@ -9,6 +9,9 @@ from src.queries.query_helpers import (
     get_users_ids,
 )
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 def get_save_tracks(args):
     user_id = args.get("user_id")
@@ -43,6 +46,7 @@ def get_save_tracks(args):
             return []
 
         tracks, save_dates = zip(*query_results)
+
         tracks = helpers.query_result_to_list(tracks)
         track_ids = list(map(lambda track: track["track_id"], tracks))
 
