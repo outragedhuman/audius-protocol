@@ -104,6 +104,7 @@ async function handleResumableUpload (req, res, next) {
       )
     }
   } catch (e) {
+    req.logger.error(`[handleResuambleUpload] Error - ${e.toString()}`)
     return sendResponse(req, res, errorResponseServerError(e.toString()))
   }
 }
