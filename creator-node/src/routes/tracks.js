@@ -82,6 +82,7 @@ async function handleResumableUpload (req, res, next) {
     const storedFileName = (urlArr.slice(urlArr.length - 1))[0]
 
     const resp = await server.handle.bind(server)(req, res, next)
+    req.logger.error(`[handleResumableUpload] statusCode=${resp.statusCode}`)
     if (resp.statusCode > 299 || resp.statusCode < 200) {
       // TODO: add resp details
       throw new Error(`Unsuccessful upload creation. fileDir=${fileDir} fileName=${storedFileName}`)
