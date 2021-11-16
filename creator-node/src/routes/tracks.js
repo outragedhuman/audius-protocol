@@ -70,6 +70,10 @@ server.datastore = new tus.FileStore({
   directory: tmpTrackArtifactsPath,
   namingFunction: getFileName
 })
+// // set the get method to some dummy thing..
+// server.get(resumableUploadRoute, (req, res) => {
+
+// })
 
 /**
  * The helper method to do the resumable upload and chunking
@@ -148,7 +152,7 @@ module.exports = function (app) {
   // Consider forking off this repo and making the HEAD/PATCH URLs configurable in the future
   app.head(resumableUploadRoute, authMiddleware, ensurePrimaryMiddleware, ensureStorageMiddleware, syncLockMiddleware, handleResumableUpload)
   app.patch(resumableUploadRoute, authMiddleware, ensurePrimaryMiddleware, ensureStorageMiddleware, syncLockMiddleware, handleResumableUpload)
-  app.get(resumableUploadRoute, authMiddleware, ensurePrimaryMiddleware, ensureStorageMiddleware, syncLockMiddleware, handleResumableUpload)
+  app.get(resumableUploadRoute, server.handle.bind(server))
 
   /**
    * Add a track transcode task into the worker queue. If the track file is uploaded properly (not transcoded), return successResponse
