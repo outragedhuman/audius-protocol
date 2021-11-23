@@ -120,7 +120,7 @@ module.exports = function (app) {
   /**
    * Initiate an upload using resumable and chunking logic for a track
    */
-  app.post('/track_content_upload', authMiddleware, ensurePrimaryMiddleware, ensureStorageMiddleware, syncLockMiddleware, checkFileMiddleware, async function (req, res, next) {
+  app.post('/track_content_upload', checkFileMiddleware, async function (req, res, next) {
     // Use the tus-node-server package to handle track upload
 
     // Save file under randomly named folders to avoid collisions
@@ -150,8 +150,8 @@ module.exports = function (app) {
   // Routes that handle the resumable upload HEAD and PATCH requests.
   // Note: due to package limitations, we must set the route to the directory of where the track is uploaded.
   // Consider forking off this repo and making the HEAD/PATCH URLs configurable in the future
-  app.head(resumableUploadRoute, authMiddleware, ensurePrimaryMiddleware, ensureStorageMiddleware, syncLockMiddleware, handleResumableUpload)
-  app.patch(resumableUploadRoute, authMiddleware, ensurePrimaryMiddleware, ensureStorageMiddleware, syncLockMiddleware, handleResumableUpload)
+  app.head(resumableUploadRoute, handleResumableUpload)
+  app.patch(resumableUploadRoute, handleResumableUpload)
   app.get(resumableUploadRoute, server.handle.bind(server))
 
   /**
