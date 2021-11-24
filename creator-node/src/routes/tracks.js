@@ -92,21 +92,9 @@ async function handleResumableUpload (req, res, next) {
       throw new Error(`Unsuccessful upload creation. fileDir=${fileDir} fileName=${storedFileName}`)
     }
 
-    // If the entire upload is done, add a transcode task to the worker queue
+    // If the entire upload is done, just return some success response. only for testing purposes
     if (parseInt(req.headers.filesize) === resp.getHeaders()['upload-offset']) {
-      await FileProcessingQueue.addTranscodeTask(
-        {
-          logContext: req.logContext,
-          req: {
-            fileName: storedFileName,
-            fileDir,
-            fileDestination: fileDir,
-            session: {
-              cnodeUserUUID: req.session.cnodeUserUUID
-            }
-          }
-        }
-      )
+      return sendResponse(req, res, { msg: 'success', ...req.headers })
     }
   } catch (e) {
     req.logger.error(`[handleResuambleUpload] Error - ${e.toString()}`)

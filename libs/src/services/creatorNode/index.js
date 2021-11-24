@@ -895,6 +895,7 @@ class CreatorNode {
           const fileDir = '/' + patchUrlArr.slice(3, patchUrlArr.length - 1).join('/')
           const fileName = patchUrlArr.slice(patchUrlArr.length - 1)[0]
           const uuid = headers['X-Request-ID']
+          console.log(`Success resumable upload: filedir=${fileDir}, filename=${fileName}, uuid=${uuid}`)
           resolve({ fileDir, fileName, uuid })
         },
         // A fn used to generate a unique str from a corresponding file. Used to store the URL for an upload to resume
