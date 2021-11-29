@@ -32,7 +32,7 @@ jobs:
     parameters:
       mad-dog-type:
         description: 'test-ci or test-nightly'
-        default: 'test-ursm-nodes'
+        default: 'test'
         type: string
     # https://circleci.com/docs/2.0/configuration-reference/#resourceclass
     # uses medium (2vcpu/4gb) by default
