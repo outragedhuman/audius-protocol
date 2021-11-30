@@ -12,13 +12,14 @@
   "scripts": {
     "test": "./scripts/test.sh",
     "test-circle-ci": "./scripts/circleci-test.sh",
-    "test:units": "mocha './src/**/*.test.js' --exit",
     "setup": "./scripts/migrate_contracts.sh",
+    "test:units": "mocha './src/**/*.test.js' --exit",
     "lint": "./node_modules/.bin/standard",
     "lint:fix": "./node_modules/.bin/standard --fix"
   },
   "dependencies": {
     "@audius/hedgehog": "1.0.12",
+    "@certusone/wormhole-sdk": "0.0.6",
     "@ethersproject/solidity": "5.0.5",
     "@solana/spl-token": "0.1.6",
     "@solana/web3.js": "1.24.1",
@@ -40,6 +41,8 @@
     "secp256k1": "4.0.2",
     "semver": "6.3.0",
     "tus-js-client": "2.3.0",
+    "esm": "3.2.25",
+    "ethers": "5.4.7",
     "web3": "1.2.8"
   },
   "devDependencies": {
