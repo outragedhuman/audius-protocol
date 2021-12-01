@@ -21,6 +21,7 @@
     "@audius/hedgehog": "1.0.12",
     "@certusone/wormhole-sdk": "0.0.6",
     "@ethersproject/solidity": "5.0.5",
+    "@improbable-eng/grpc-web-node-http-transport": "0.15.0",
     "@solana/spl-token": "0.1.6",
     "@solana/web3.js": "1.24.1",
     "abi-decoder": "1.2.0",
@@ -30,8 +31,10 @@
     "borsh": "0.4.0",
     "bs58": "4.0.1",
     "elliptic": "6.5.4",
+    "esm": "3.2.25",
     "eth-sig-util": "2.5.4",
     "ethereumjs-tx": "2.1.2",
+    "ethers": "5.4.7",
     "form-data": "3.0.0",
     "jsonschema": "1.2.6",
     "keccak256": "1.0.2",
@@ -41,8 +44,6 @@
     "secp256k1": "4.0.2",
     "semver": "6.3.0",
     "tus-js-client": "2.3.0",
-    "esm": "3.2.25",
-    "ethers": "5.4.7",
     "web3": "1.2.8"
   },
   "devDependencies": {
