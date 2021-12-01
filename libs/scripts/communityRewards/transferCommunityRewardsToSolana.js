@@ -117,9 +117,9 @@ async function run() {
     const signTransaction = async (transaction) => {
       console.log('joeeeeeeeeeee')
       console.log('SIGN', transaction.signatures)
-      transaction.signTransaction(feePayerKeypair)
-      console.log('SIGN', transaction.signatures)
-      // transaction.partialSign(feePayerKeypair);
+      // transaction.signTransaction(feePayerKeypair)
+      transaction.partialSign(feePayerKeypair);
+      console.log('SIGN AFTER', transaction.signatures)
       // transaction.partialSign(keypair);
       return transaction;
     }
@@ -128,13 +128,13 @@ async function run() {
       connection,
       // undefined,
       // ()=>{},
-      signTransaction,
       // feePayerPublicKey,
       // web3.eth.signTransaction,
       // feePayerPublicKey.signTransaction,
+      signTransaction,
       SOL_BRIDGE_ADDRESS,
-      // keypair.publicKey.toString(),
       feePayerAddress,
+      // keypair.publicKey.toString(),
       vaaBytes
     );
 
@@ -148,8 +148,9 @@ async function run() {
       /* mintAddress */ WAUDIO_MINT_ADDRESS
     );
     console.log({ transaction })
+    const signed = await signTransaction(transaction);
+    // const signed = await feePayerPublicKey.signTransaction(transaction);
     // const signed = await web3.eth.signTransaction(transaction);
-    const signed = await feePayerPublicKey.signTransaction(transaction);
     console.log({ signed })
     const txid = await connection.sendRawTransaction(signed.serialize());
     console.log({ txid })
