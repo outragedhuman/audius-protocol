@@ -1010,8 +1010,10 @@ def update_task(self):
                 current_block_result = session.query(Block).filter_by(is_current=True).first()
                 current_block = current_block_result.number
                 
+                logger.info("index.py#custom - About to start custom revert logic")
                 count = 0
                 while current_block > 23200000 or count < 1000:
+                    logger.info(f"index.py#custom - Processing block {current_block}")
                     traverse_block = session.query(Block).filter_by(number=current_block).first()
                     revert_blocks_list.append(traverse_block)
                     parent_block = session.query(Block).filter(
@@ -1020,10 +1022,9 @@ def update_task(self):
                     current_block = parent_block.number
                     count += 1
                 
-                
                 session.expunge_all()
-                
 
+            logger.info("index.py#custom - revert list", revert_blocks_list)
             # Exit DB scope, revert/index functions will manage their own sessions
             # Perform revert operations
             revert_blocks(self, db, revert_blocks_list)
