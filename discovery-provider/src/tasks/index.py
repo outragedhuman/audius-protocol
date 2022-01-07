@@ -3,6 +3,7 @@ import concurrent.futures
 import logging
 
 from sqlalchemy import func
+from sqlalchemy.sql.visitors import traverse
 from src.app import get_contract_addresses
 from src.challenges.challenge_event_bus import ChallengeEventBus
 from src.models import (
@@ -994,7 +995,8 @@ def update_task(self):
             )
             initialize_blocks_table_if_necessary(db)
 
-            latest_block = get_latest_block(db)
+            # latest_block = get_latest_block(db)
+            
 
             # Capture block information between latest and target block hash
             index_blocks_list = []
@@ -1002,100 +1004,25 @@ def update_task(self):
             # Capture outdated block information given current database state
             revert_blocks_list = []
 
+            current_block_result = None
+
             with db.scoped_session() as session:
-                block_intersection_found = False
-                intersect_block_hash = web3.toHex(latest_block.hash)
-
-                # First, we capture the block hash at which the current tail
-                # and our indexed data intersect
-                while not block_intersection_found:
-                    current_hash = web3.toHex(latest_block.hash)
-                    parent_hash = web3.toHex(latest_block.parentHash)
-
-                    latest_block_db_query = session.query(Block).filter(
-                        Block.blockhash == current_hash
-                        and Block.parenthash == parent_hash
-                        and Block.is_current == True
-                    )
-
-                    # Exit loop if we are up to date
-                    if latest_block_db_query.count() > 0:
-                        block_intersection_found = True
-                        intersect_block_hash = current_hash
-                        continue
-
-                    index_blocks_list.append(latest_block)
-
-                    parent_block_query = session.query(Block).filter(
-                        Block.blockhash == parent_hash
-                    )
-
-                    # Intersection is considered found if current block parenthash is
-                    # present in Blocks table
-                    block_intersection_found = parent_block_query.count() > 0
-
-                    num_blocks = len(index_blocks_list)
-                    if num_blocks % 50 == 0:
-                        logger.info(
-                            f"index.py | update_task | Populating index_blocks_list, current length == {num_blocks}"
-                        )
-
-                    # Special case for initial block hash value of 0x0 and 0x0000....
-                    reached_initial_block = parent_hash == default_padded_start_hash
-                    if reached_initial_block:
-                        block_intersection_found = True
-                        intersect_block_hash = default_config_start_hash
-                    else:
-                        latest_block = web3.eth.getBlock(parent_hash, True)
-                        intersect_block_hash = web3.toHex(latest_block.hash)
-
-                # Determine whether current indexed data (is_current == True) matches the
-                # intersection block hash
-                # Important when determining whether undo operations are necessary
-                base_query = session.query(Block)
-                base_query = base_query.filter(Block.is_current == True)
-                db_block_query = base_query.all()
-
-                assert len(db_block_query) == 1, "Expected SINGLE row marked as current"
-                db_current_block = db_block_query[0]
-
-                # Check current block
-                undo_operations_required = (
-                    db_current_block.blockhash != intersect_block_hash
-                )
-
-                if undo_operations_required:
-                    logger.info(
-                        f"index.py | update_task | Undo required - {undo_operations_required}. \
-                                Intersect_blockhash : {intersect_block_hash}.\
-                                DB current blockhash {db_current_block.blockhash}"
-                    )
-                else:
-                    logger.info(
-                        f"index.py | update_task | Intersect_blockhash : {intersect_block_hash}"
-                    )
-
-                # Assign traverse block to current database block
-                traverse_block = db_current_block
-
-                # Add blocks to 'block remove' list from here as we traverse to the
-                # valid intersect block
-                while traverse_block.blockhash != intersect_block_hash:
+                current_block_result = session.query(Block).filter_by(is_current=True).first()
+                current_block = current_block_result.number
+                
+                count = 0
+                while current_block > 23200000 or count < 1000:
+                    traverse_block = session.query(Block).filter_by(number=current_block).first()
                     revert_blocks_list.append(traverse_block)
-                    parent_query = session.query(Block).filter(
+                    parent_block = session.query(Block).filter(
                         Block.blockhash == traverse_block.parenthash
-                    )
-
-                    if parent_query.count() == 0:
-                        logger.info(
-                            f"index.py | update_task | Special case exit traverse block parenthash - "
-                            f"{traverse_block.parenthash}"
-                        )
-                        break
-                    traverse_block = parent_query[0]
-
-                # Ensure revert blocks list is available after session scope
+                    ).first()
+                    current_block = parent_block.number
+                    count += 1
+                
+                
                 session.expunge_all()
+                
 
             # Exit DB scope, revert/index functions will manage their own sessions
             # Perform revert operations
