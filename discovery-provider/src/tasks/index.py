@@ -1012,8 +1012,8 @@ def update_task(self):
                 
                 logger.info("index.py#custom - About to start custom revert logic")
                 count = 0
-                while current_block > 23200000 or count < 1000:
-                    logger.info(f"index.py#custom - Processing block {current_block}")
+                while current_block > 23200000 and count < 1000:
+                    logger.info(f"index.py#custom - Processing block {current_block} {count}")
                     traverse_block = session.query(Block).filter_by(number=current_block).first()
                     revert_blocks_list.append(traverse_block)
                     parent_block = session.query(Block).filter(
