@@ -883,7 +883,7 @@ def revert_blocks(self, db, revert_blocks_list):
     logger.info(revert_blocks_list)
 
     with db.scoped_session() as session:
-
+        session.execute('SET session_replication_role = replica;')
         rebuild_playlist_index = False
         rebuild_track_index = False
         rebuild_user_index = False
