@@ -779,6 +779,7 @@ def revert_blocks(self, db, revert_blocks_list):
                 .filter(TrackRoute.blockhash == revert_hash)
                 .all()
             )
+            logger.info(f"index.py | {self.request.id} | Revert - got all query data")
 
             # Revert all of above transactions
             for save_to_revert in revert_save_entries:
