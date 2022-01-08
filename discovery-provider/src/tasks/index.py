@@ -970,6 +970,7 @@ def revert_blocks(self, db, revert_blocks_list):
                     except Exception as exc:
                         logger.error(exc)
 
+            logger.info(f"index.py | {self.request.id} | Revert - Finished all undo operations")
             # Remove outdated block entry
             session.query(Block).filter(Block.blockhash == revert_hash).delete()
 
