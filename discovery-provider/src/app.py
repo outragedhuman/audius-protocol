@@ -400,102 +400,102 @@ def configure_celery(celery, test_config=None):
                 "task": "update_play_count",
                 "schedule": timedelta(seconds=60),
             },
-            "update_metrics": {
-                "task": "update_metrics",
-                "schedule": crontab(minute=0, hour="*"),
-            },
-            "aggregate_metrics": {
-                "task": "aggregate_metrics",
-                "schedule": timedelta(minutes=METRICS_INTERVAL),
-            },
-            "synchronize_metrics": {
-                "task": "synchronize_metrics",
-                "schedule": timedelta(minutes=SYNCHRONIZE_METRICS_INTERVAL),
-            },
-            "update_materialized_views": {
-                "task": "update_materialized_views",
-                "schedule": timedelta(seconds=300),
-            },
-            "update_aggregate_plays": {
-                "task": "update_aggregate_plays",
-                "schedule": timedelta(seconds=15),
-            },
-            "index_hourly_play_counts": {
-                "task": "index_hourly_play_counts",
-                "schedule": timedelta(seconds=30),
-            },
-            "vacuum_db": {
-                "task": "vacuum_db",
-                "schedule": timedelta(days=1),
-            },
-            "update_network_peers": {
-                "task": "update_network_peers",
-                "schedule": timedelta(seconds=30),
-            },
-            "index_trending": {
-                "task": "index_trending",
-                "schedule": timedelta(seconds=10),
-            },
-            "update_user_balances": {
-                "task": "update_user_balances",
-                "schedule": timedelta(seconds=60),
-            },
-            "monitoring_queue": {
-                "task": "monitoring_queue",
-                "schedule": timedelta(seconds=60),
-            },
-            "cache_trending_playlists": {
-                "task": "cache_trending_playlists",
-                "schedule": timedelta(minutes=30),
-            },
+            # "update_metrics": {
+            #     "task": "update_metrics",
+            #     "schedule": crontab(minute=0, hour="*"),
+            # },
+            # "aggregate_metrics": {
+            #     "task": "aggregate_metrics",
+            #     "schedule": timedelta(minutes=METRICS_INTERVAL),
+            # },
+            # "synchronize_metrics": {
+            #     "task": "synchronize_metrics",
+            #     "schedule": timedelta(minutes=SYNCHRONIZE_METRICS_INTERVAL),
+            # },
+            # "update_materialized_views": {
+            #     "task": "update_materialized_views",
+            #     "schedule": timedelta(seconds=300),
+            # },
+            # "update_aggregate_plays": {
+            #     "task": "update_aggregate_plays",
+            #     "schedule": timedelta(seconds=15),
+            # },
+            # "index_hourly_play_counts": {
+            #     "task": "index_hourly_play_counts",
+            #     "schedule": timedelta(seconds=30),
+            # },
+            # "vacuum_db": {
+            #     "task": "vacuum_db",
+            #     "schedule": timedelta(days=1),
+            # },
+            # "update_network_peers": {
+            #     "task": "update_network_peers",
+            #     "schedule": timedelta(seconds=30),
+            # },
+            # "index_trending": {
+            #     "task": "index_trending",
+            #     "schedule": timedelta(seconds=10),
+            # },
+            # "update_user_balances": {
+            #     "task": "update_user_balances",
+            #     "schedule": timedelta(seconds=60),
+            # },
+            # "monitoring_queue": {
+            #     "task": "monitoring_queue",
+            #     "schedule": timedelta(seconds=60),
+            # },
+            # "cache_trending_playlists": {
+            #     "task": "cache_trending_playlists",
+            #     "schedule": timedelta(minutes=30),
+            # },
             "index_solana_plays": {
                 "task": "index_solana_plays",
                 "schedule": timedelta(seconds=5),
             },
-            "update_aggregate_user": {
-                "task": "update_aggregate_user",
-                "schedule": timedelta(seconds=30),
-            },
-            "update_aggregate_track": {
-                "task": "update_aggregate_track",
-                "schedule": timedelta(seconds=30),
-            },
-            "update_aggregate_playlist": {
-                "task": "update_aggregate_playlist",
-                "schedule": timedelta(seconds=30),
-            },
-            "index_user_bank": {
-                "task": "index_user_bank",
-                "schedule": timedelta(seconds=5),
-            },
-            "index_challenges": {
-                "task": "index_challenges",
-                "schedule": timedelta(seconds=5),
-            },
-            "index_eth": {
-                "task": "index_eth",
-                "schedule": timedelta(seconds=10),
-            },
-            "index_oracles": {
-                "task": "index_oracles",
-                "schedule": timedelta(minutes=5),
-            },
-            "index_rewards_manager": {
-                "task": "index_rewards_manager",
-                "schedule": timedelta(seconds=5),
-            },
-            "index_related_artists": {
-                "task": "index_related_artists",
-                "schedule": timedelta(seconds=60),
-            },
-            "index_listen_count_milestones": {
-                "task": "index_listen_count_milestones",
-                "schedule": timedelta(seconds=5),
-            },
-            "index_user_listening_history": {
-                "task": "index_user_listening_history",
-                "schedule": timedelta(seconds=5),
-            },
+            # "update_aggregate_user": {
+            #     "task": "update_aggregate_user",
+            #     "schedule": timedelta(seconds=30),
+            # },
+            # "update_aggregate_track": {
+            #     "task": "update_aggregate_track",
+            #     "schedule": timedelta(seconds=30),
+            # },
+            # "update_aggregate_playlist": {
+            #     "task": "update_aggregate_playlist",
+            #     "schedule": timedelta(seconds=30),
+            # },
+            # "index_user_bank": {
+            #     "task": "index_user_bank",
+            #     "schedule": timedelta(seconds=5),
+            # },
+            # "index_challenges": {
+            #     "task": "index_challenges",
+            #     "schedule": timedelta(seconds=5),
+            # },
+            # "index_eth": {
+            #     "task": "index_eth",
+            #     "schedule": timedelta(seconds=10),
+            # },
+            # "index_oracles": {
+            #     "task": "index_oracles",
+            #     "schedule": timedelta(minutes=5),
+            # },
+            # "index_rewards_manager": {
+            #     "task": "index_rewards_manager",
+            #     "schedule": timedelta(seconds=5),
+            # },
+            # "index_related_artists": {
+            #     "task": "index_related_artists",
+            #     "schedule": timedelta(seconds=60),
+            # },
+            # "index_listen_count_milestones": {
+            #     "task": "index_listen_count_milestones",
+            #     "schedule": timedelta(seconds=5),
+            # },
+            # "index_user_listening_history": {
+            #     "task": "index_user_listening_history",
+            #     "schedule": timedelta(seconds=5),
+            # },
         },
         task_serializer="json",
         accept_content=["json"],
