@@ -800,6 +800,65 @@ def revert_ursm_nodes(self, session, revert_ursm_content_node_entries, revert_bl
             f"index.py | {self.request.id} | Reverting URSM content node {ursm_content_node_to_revert}"
         )
         session.delete(ursm_content_node_to_revert)
+
+def revert_users(self, session, revert_user_entries, revert_block_number):
+    # TODO: ASSERT ON IDS GREATER FOR BOTH DATA MODELS
+    for user_to_revert in revert_user_entries:
+        user_id = user_to_revert.user_id
+        previous_user_entry = (
+            session.query(User)
+            .filter(User.user_id == user_id)
+            .filter(User.blocknumber < revert_block_number)
+            .order_by(User.blocknumber.desc())
+            .first()
+        )
+        if previous_user_entry:
+            # Update previous user row, setting is_current to true
+            previous_user_entry.is_current = True
+        # Remove outdated user entries
+        logger.info(f"index.py | {self.request.id} | Reverting user {user_to_revert}")
+        session.delete(user_to_revert)
+
+def revert_associated_wallets_fn(self, session, revert_associated_wallets, revert_block_number):
+    for associated_wallets_to_revert in revert_associated_wallets:
+        user_id = associated_wallets_to_revert.user_id
+        previous_associated_wallet_entry = (
+            session.query(AssociatedWallet)
+            .filter(AssociatedWallet.user_id == user_id)
+            .filter(AssociatedWallet.blocknumber < revert_block_number)
+            .order_by(AssociatedWallet.blocknumber.desc())
+            .first()
+        )
+        if previous_associated_wallet_entry:
+            session.query(AssociatedWallet).filter(
+                AssociatedWallet.user_id == user_id
+            ).filter(
+                AssociatedWallet.blocknumber
+                == previous_associated_wallet_entry.blocknumber
+            ).update(
+                {"is_current": True}
+            )
+        # Remove outdated associated wallets
+        logger.info(f"index.py | {self.request.id} | Reverting associated Wallet {user_id}")
+        session.delete(associated_wallets_to_revert)
+
+def revert_track_routes_fn(self, session, revert_track_routes, revert_block_number):
+    for track_route_to_revert in revert_track_routes:
+        track_id = track_route_to_revert.track_id
+        previous_track_route_entry = (
+            session.query(TrackRoute)
+            .filter(
+                TrackRoute.track_id == track_id,
+                TrackRoute.blocknumber < revert_block_number,
+            )
+            .order_by(TrackRoute.blocknumber.desc(), TrackRoute.slug.asc())
+            .first()
+        )
+        if previous_track_route_entry:
+            previous_track_route_entry.is_current = True
+        logger.info(f"index.py | {self.request.id} | Reverting track route {track_route_to_revert}")
+        session.delete(track_route_to_revert)
+
 # transactions are reverted in reverse dependency order (social features --> playlists --> tracks --> users)
 def revert_blocks(self, db, revert_blocks_list):
     # TODO: Remove this exception once the unexpected revert scenario has been diagnosed
@@ -897,7 +956,11 @@ def revert_blocks(self, db, revert_blocks_list):
                     executor.submit(revert_follows, self, session, revert_follow_entries),
                     executor.submit(revert_playlists, self, session, revert_playlist_entries, revert_block_number),
                     executor.submit(revert_tracks, self, session, revert_track_entries, revert_block_number),
-                    executor.submit(revert_ursm_nodes, self, session, revert_ursm_content_node_entries, revert_block_number)
+                    executor.submit(revert_ursm_nodes, self, session, revert_ursm_content_node_entries, revert_block_number),
+                    executor.submit(revert_users, self, session, revert_users, revert_block_number),
+                    executor.submit(revert_associated_wallets_fn, self, session, revert_associated_wallets, revert_block_number),
+                    executor.submit(revert_user_events, session, revert_user_events_entries, revert_block_number),
+                    executor.submit(revert_track_routes_fn, session, revert_track_routes, revert_block_number),
                 ]
 
                 for future in concurrent.futures.as_completed(futures):
@@ -906,63 +969,6 @@ def revert_blocks(self, db, revert_blocks_list):
                         future.result()
                     except Exception as exc:
                         logger.error(exc)
-
-            # TODO: ASSERT ON IDS GREATER FOR BOTH DATA MODELS
-            for user_to_revert in revert_user_entries:
-                user_id = user_to_revert.user_id
-                previous_user_entry = (
-                    session.query(User)
-                    .filter(User.user_id == user_id)
-                    .filter(User.blocknumber < revert_block_number)
-                    .order_by(User.blocknumber.desc())
-                    .first()
-                )
-                if previous_user_entry:
-                    # Update previous user row, setting is_current to true
-                    previous_user_entry.is_current = True
-                # Remove outdated user entries
-                logger.info(f"index.py | {self.request.id} | Reverting user {user_to_revert}")
-                session.delete(user_to_revert)
-
-            for associated_wallets_to_revert in revert_associated_wallets:
-                user_id = associated_wallets_to_revert.user_id
-                previous_associated_wallet_entry = (
-                    session.query(AssociatedWallet)
-                    .filter(AssociatedWallet.user_id == user_id)
-                    .filter(AssociatedWallet.blocknumber < revert_block_number)
-                    .order_by(AssociatedWallet.blocknumber.desc())
-                    .first()
-                )
-                if previous_associated_wallet_entry:
-                    session.query(AssociatedWallet).filter(
-                        AssociatedWallet.user_id == user_id
-                    ).filter(
-                        AssociatedWallet.blocknumber
-                        == previous_associated_wallet_entry.blocknumber
-                    ).update(
-                        {"is_current": True}
-                    )
-                # Remove outdated associated wallets
-                logger.info(f"index.py | {self.request.id} | Reverting associated Wallet {user_id}")
-                session.delete(associated_wallets_to_revert)
-
-            revert_user_events(session, revert_user_events_entries, revert_block_number)
-
-            for track_route_to_revert in revert_track_routes:
-                track_id = track_route_to_revert.track_id
-                previous_track_route_entry = (
-                    session.query(TrackRoute)
-                    .filter(
-                        TrackRoute.track_id == track_id,
-                        TrackRoute.blocknumber < revert_block_number,
-                    )
-                    .order_by(TrackRoute.blocknumber.desc(), TrackRoute.slug.asc())
-                    .first()
-                )
-                if previous_track_route_entry:
-                    previous_track_route_entry.is_current = True
-                logger.info(f"index.py | {self.request.id} | Reverting track route {track_route_to_revert}")
-                session.delete(track_route_to_revert)
 
             # Remove outdated block entry
             session.query(Block).filter(Block.blockhash == revert_hash).delete()
