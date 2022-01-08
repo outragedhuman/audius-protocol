@@ -725,7 +725,7 @@ def revert_blocks(self, db, revert_blocks_list):
             # Cache relevant information about current block
             revert_hash = revert_block.blockhash
             revert_block_number = revert_block.number
-            logger.info(f"Reverting {revert_block_number}")
+            logger.info(f"index.py | {self.request.id} | Reverting {revert_block_number}")
             parent_hash = revert_block.parenthash
 
             # Special case for default start block value of 0x0 / 0x0...0
@@ -814,7 +814,7 @@ def revert_blocks(self, db, revert_blocks_list):
                 if previous_repost_entry:
                     previous_repost_entry.is_current = True
                 # Remove outdated repost entry
-                logger.info(f"Reverting repost: {repost_to_revert}")
+                logger.info(f"index.py | {self.request.id} | Reverting repost {repost_to_revert}")
                 session.delete(repost_to_revert)
 
             for follow_to_revert in revert_follow_entries:
@@ -833,7 +833,7 @@ def revert_blocks(self, db, revert_blocks_list):
                 if previous_follow_entry:
                     previous_follow_entry.is_current = True
                 # remove outdated follow entry
-                logger.info(f"Reverting follow: {follow_to_revert}")
+                logger.info(f"index.py | {self.request.id} | Reverting follow {follow_to_revert}")
                 session.delete(follow_to_revert)
 
             for playlist_to_revert in revert_playlist_entries:
@@ -863,7 +863,7 @@ def revert_blocks(self, db, revert_blocks_list):
                     # First element in descending order is new current track item
                     previous_track_entry.is_current = True
                 # Remove track entries
-                logger.info(f"Reverting track: {track_to_revert}")
+                logger.info(f"index.py | {self.request.id} | Reverting track {track_to_revert}")
                 session.delete(track_to_revert)
 
             for ursm_content_node_to_revert in revert_ursm_content_node_entries:
@@ -879,7 +879,7 @@ def revert_blocks(self, db, revert_blocks_list):
                     previous_ursm_content_node_entry.is_current = True
                 # Remove previous ursm Content Node entires
                 logger.info(
-                    f"Reverting ursm Content Node: {ursm_content_node_to_revert}"
+                    f"index.py | {self.request.id} | Reverting URSM content node {ursm_content_node_to_revert}"
                 )
                 session.delete(ursm_content_node_to_revert)
 
@@ -897,7 +897,7 @@ def revert_blocks(self, db, revert_blocks_list):
                     # Update previous user row, setting is_current to true
                     previous_user_entry.is_current = True
                 # Remove outdated user entries
-                logger.info(f"Reverting user: {user_to_revert}")
+                logger.info(f"index.py | {self.request.id} | Reverting user {user_to_revert}")
                 session.delete(user_to_revert)
 
             for associated_wallets_to_revert in revert_associated_wallets:
@@ -919,7 +919,7 @@ def revert_blocks(self, db, revert_blocks_list):
                         {"is_current": True}
                     )
                 # Remove outdated associated wallets
-                logger.info(f"Reverting associated Wallet: {user_id}")
+                logger.info(f"index.py | {self.request.id} | Reverting associated Wallet {user_id}")
                 session.delete(associated_wallets_to_revert)
 
             revert_user_events(session, revert_user_events_entries, revert_block_number)
@@ -937,7 +937,7 @@ def revert_blocks(self, db, revert_blocks_list):
                 )
                 if previous_track_route_entry:
                     previous_track_route_entry.is_current = True
-                logger.info(f"Reverting track route {track_route_to_revert}")
+                logger.info(f"index.py | {self.request.id} | Reverting track route {track_route_to_revert}")
                 session.delete(track_route_to_revert)
 
             # Remove outdated block entry
@@ -1023,7 +1023,7 @@ def update_task(self):
                 
                 session.expunge_all()
 
-            logger.info("index.py#custom - revert list", revert_blocks_list)
+            logger.info("index.py#custom - revert list generated")
             # Exit DB scope, revert/index functions will manage their own sessions
             # Perform revert operations
             revert_blocks(self, db, revert_blocks_list)
