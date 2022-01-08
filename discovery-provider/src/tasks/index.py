@@ -704,10 +704,10 @@ def revert_blocks(self, db, revert_blocks_list):
     if num_revert_blocks > 10000:
         raise Exception("Unexpected revert, >10,0000 blocks")
 
-    if num_revert_blocks > 500:
-        logger.error(f"index.py | {self.request.id} | Revert blocks list > 500")
+    if num_revert_blocks > 5000:
+        logger.error(f"index.py | {self.request.id} | Revert blocks list > 5000")
         logger.error(revert_blocks_list)
-        revert_blocks_list = revert_blocks_list[:500]
+        revert_blocks_list = revert_blocks_list[:5000]
         logger.error(
             f"index.py | {self.request.id} | Sliced revert blocks list {revert_blocks_list}"
         )
@@ -980,7 +980,7 @@ def update_task(self):
     redis = update_task.redis
 
     # Update redis cache for health check queries
-    update_latest_block_redis()
+    # update_latest_block_redis()
 
     # Define lock acquired boolean
     have_lock = False
@@ -991,11 +991,11 @@ def update_task(self):
         have_lock = update_lock.acquire(blocking=False)
         if have_lock:
             logger.info(
-                f"index.py | {self.request.id} | update_task | Acquired disc_prov_lock"
+                f"index.py#custom | {self.request.id} | update_task | Acquired disc_prov_lock"
             )
             initialize_blocks_table_if_necessary(db)
 
-            # latest_block = get_latest_block(db)
+            latest_block = get_latest_block(db)
             
 
             # Capture block information between latest and target block hash
@@ -1012,8 +1012,7 @@ def update_task(self):
                 
                 logger.info("index.py#custom - About to start custom revert logic")
                 count = 0
-                while current_block > 23200000 and count < 1000:
-                    logger.info(f"index.py#custom - Processing block {current_block} {count}")
+                while current_block > 23200000 and count < 2500:
                     traverse_block = session.query(Block).filter_by(number=current_block).first()
                     revert_blocks_list.append(traverse_block)
                     parent_block = session.query(Block).filter(
@@ -1030,13 +1029,13 @@ def update_task(self):
             revert_blocks(self, db, revert_blocks_list)
 
             # Perform indexing operations
-            index_blocks(self, db, index_blocks_list)
+            # index_blocks(self, db, index_blocks_list)
             logger.info(
-                f"index.py | update_task | {self.request.id} | Processing complete within session"
+                f"index.py#custom | update_task | {self.request.id} | Processing complete within session"
             )
         else:
             logger.error(
-                f"index.py | update_task | {self.request.id} | Failed to acquire disc_prov_lock"
+                f"index.py#custom | update_task | {self.request.id} | Failed to acquire disc_prov_lock"
             )
     except Exception as e:
         logger.error(f"Fatal error in main loop {e}", exc_info=True)
