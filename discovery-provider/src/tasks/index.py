@@ -691,7 +691,115 @@ def index_blocks(self, db, blocks_list):
     if num_blocks > 0:
         logger.warning(f"index.py | index_blocks | Indexed {num_blocks} blocks")
 
+def revert_saves(self, session, revert_save_entries):
+    for save_to_revert in revert_save_entries:
+        save_item_id = save_to_revert.save_item_id
+        save_user_id = save_to_revert.user_id
+        save_type = save_to_revert.save_type
+        previous_save_entry = (
+            session.query(Save)
+            .filter(Save.user_id == save_user_id)
+            .filter(Save.save_item_id == save_item_id)
+            .filter(Save.save_type == save_type)
+            .order_by(Save.blocknumber.desc())
+            .first()
+        )
+        if previous_save_entry:
+            previous_save_entry.is_current = True
+        # Remove outdated save item entry
+        logger.info(f"index.py | {self.request.id} | Reverting repost {save_to_revert}")
+        session.delete(save_to_revert)
 
+def revert_reposts(self, session, revert_repost_entries):
+    for repost_to_revert in revert_repost_entries:
+        repost_user_id = repost_to_revert.user_id
+        repost_item_id = repost_to_revert.repost_item_id
+        repost_type = repost_to_revert.repost_type
+        previous_repost_entry = (
+            session.query(Repost)
+            .filter(Repost.user_id == repost_user_id)
+            .filter(Repost.repost_item_id == repost_item_id)
+            .filter(Repost.repost_type == repost_type)
+            .order_by(Repost.blocknumber.desc())
+            .first()
+        )
+        # Update prev repost row (is_delete) to is_current == True
+        if previous_repost_entry:
+            previous_repost_entry.is_current = True
+        # Remove outdated repost entry
+        logger.info(f"index.py | {self.request.id} | Reverting repost {repost_to_revert}")
+        session.delete(repost_to_revert)
+
+def revert_follows(self, session, revert_follow_entries):
+    for follow_to_revert in revert_follow_entries:
+        previous_follow_entry = (
+            session.query(Follow)
+            .filter(
+                Follow.follower_user_id == follow_to_revert.follower_user_id
+            )
+            .filter(
+                Follow.followee_user_id == follow_to_revert.followee_user_id
+            )
+            .order_by(Follow.blocknumber.desc())
+            .first()
+        )
+        # update prev follow row (is_delete) to is_current = true
+        if previous_follow_entry:
+            previous_follow_entry.is_current = True
+        # remove outdated follow entry
+        logger.info(f"index.py | {self.request.id} | Reverting follow {follow_to_revert}")
+        session.delete(follow_to_revert)
+
+def revert_playlists(self, session, revert_playlist_entries, revert_block_number):
+    for playlist_to_revert in revert_playlist_entries:
+        playlist_id = playlist_to_revert.playlist_id
+        previous_playlist_entry = (
+            session.query(Playlist)
+            .filter(Playlist.playlist_id == playlist_id)
+            .filter(Playlist.blocknumber < revert_block_number)
+            .order_by(Playlist.blocknumber.desc())
+            .first()
+        )
+        if previous_playlist_entry:
+            previous_playlist_entry.is_current = True
+        # Remove outdated playlist entry
+        logger.info(f"index.py | {self.request.id} | Reverting playlist {previous_playlist_entry}")
+        session.delete(playlist_to_revert)
+
+def revert_tracks(self, session, revert_track_entries, revert_block_number):
+    for track_to_revert in revert_track_entries:
+        track_id = track_to_revert.track_id
+        previous_track_entry = (
+            session.query(Track)
+            .filter(Track.track_id == track_id)
+            .filter(Track.blocknumber < revert_block_number)
+            .order_by(Track.blocknumber.desc())
+            .first()
+        )
+        if previous_track_entry:
+            # First element in descending order is new current track item
+            previous_track_entry.is_current = True
+        # Remove track entries
+        logger.info(f"index.py | {self.request.id} | Reverting track {track_to_revert}")
+        session.delete(track_to_revert)
+
+def revert_ursm_nodes(self, session, revert_ursm_content_node_entries, revert_block_number):
+    for ursm_content_node_to_revert in revert_ursm_content_node_entries:
+        cnode_sp_id = ursm_content_node_to_revert.cnode_sp_id
+        previous_ursm_content_node_entry = (
+            session.query(URSMContentNode)
+            .filter(URSMContentNode.cnode_sp_id == cnode_sp_id)
+            .filter(URSMContentNode.blocknumber < revert_block_number)
+            .order_by(URSMContentNode.blocknumber.desc())
+            .first()
+        )
+        if previous_ursm_content_node_entry:
+            previous_ursm_content_node_entry.is_current = True
+        # Remove previous ursm Content Node entires
+        logger.info(
+            f"index.py | {self.request.id} | Reverting URSM content node {ursm_content_node_to_revert}"
+        )
+        session.delete(ursm_content_node_to_revert)
 # transactions are reverted in reverse dependency order (social features --> playlists --> tracks --> users)
 def revert_blocks(self, db, revert_blocks_list):
     # TODO: Remove this exception once the unexpected revert scenario has been diagnosed
@@ -782,107 +890,22 @@ def revert_blocks(self, db, revert_blocks_list):
             logger.info(f"index.py | {self.request.id} | Revert - got all query data")
 
             # Revert all of above transactions
-            for save_to_revert in revert_save_entries:
-                save_item_id = save_to_revert.save_item_id
-                save_user_id = save_to_revert.user_id
-                save_type = save_to_revert.save_type
-                previous_save_entry = (
-                    session.query(Save)
-                    .filter(Save.user_id == save_user_id)
-                    .filter(Save.save_item_id == save_item_id)
-                    .filter(Save.save_type == save_type)
-                    .order_by(Save.blocknumber.desc())
-                    .first()
-                )
-                if previous_save_entry:
-                    previous_save_entry.is_current = True
-                # Remove outdated save item entry
-                session.delete(save_to_revert)
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                futures = [
+                    executor.submit(revert_saves, self, session, revert_save_entries),
+                    executor.submit(revert_reposts, self, session, revert_repost_entries),
+                    executor.submit(revert_follows, self, session, revert_follow_entries),
+                    executor.submit(revert_playlists, self, session, revert_playlist_entries, revert_block_number),
+                    executor.submit(revert_tracks, self, session, revert_track_entries, revert_block_number),
+                    executor.submit(revert_ursm_nodes, self, session, revert_ursm_content_node_entries, revert_block_number)
+                ]
 
-            for repost_to_revert in revert_repost_entries:
-                repost_user_id = repost_to_revert.user_id
-                repost_item_id = repost_to_revert.repost_item_id
-                repost_type = repost_to_revert.repost_type
-                previous_repost_entry = (
-                    session.query(Repost)
-                    .filter(Repost.user_id == repost_user_id)
-                    .filter(Repost.repost_item_id == repost_item_id)
-                    .filter(Repost.repost_type == repost_type)
-                    .order_by(Repost.blocknumber.desc())
-                    .first()
-                )
-                # Update prev repost row (is_delete) to is_current == True
-                if previous_repost_entry:
-                    previous_repost_entry.is_current = True
-                # Remove outdated repost entry
-                logger.info(f"index.py | {self.request.id} | Reverting repost {repost_to_revert}")
-                session.delete(repost_to_revert)
-
-            for follow_to_revert in revert_follow_entries:
-                previous_follow_entry = (
-                    session.query(Follow)
-                    .filter(
-                        Follow.follower_user_id == follow_to_revert.follower_user_id
-                    )
-                    .filter(
-                        Follow.followee_user_id == follow_to_revert.followee_user_id
-                    )
-                    .order_by(Follow.blocknumber.desc())
-                    .first()
-                )
-                # update prev follow row (is_delete) to is_current = true
-                if previous_follow_entry:
-                    previous_follow_entry.is_current = True
-                # remove outdated follow entry
-                logger.info(f"index.py | {self.request.id} | Reverting follow {follow_to_revert}")
-                session.delete(follow_to_revert)
-
-            for playlist_to_revert in revert_playlist_entries:
-                playlist_id = playlist_to_revert.playlist_id
-                previous_playlist_entry = (
-                    session.query(Playlist)
-                    .filter(Playlist.playlist_id == playlist_id)
-                    .filter(Playlist.blocknumber < revert_block_number)
-                    .order_by(Playlist.blocknumber.desc())
-                    .first()
-                )
-                if previous_playlist_entry:
-                    previous_playlist_entry.is_current = True
-                # Remove outdated playlist entry
-                session.delete(playlist_to_revert)
-
-            for track_to_revert in revert_track_entries:
-                track_id = track_to_revert.track_id
-                previous_track_entry = (
-                    session.query(Track)
-                    .filter(Track.track_id == track_id)
-                    .filter(Track.blocknumber < revert_block_number)
-                    .order_by(Track.blocknumber.desc())
-                    .first()
-                )
-                if previous_track_entry:
-                    # First element in descending order is new current track item
-                    previous_track_entry.is_current = True
-                # Remove track entries
-                logger.info(f"index.py | {self.request.id} | Reverting track {track_to_revert}")
-                session.delete(track_to_revert)
-
-            for ursm_content_node_to_revert in revert_ursm_content_node_entries:
-                cnode_sp_id = ursm_content_node_to_revert.cnode_sp_id
-                previous_ursm_content_node_entry = (
-                    session.query(URSMContentNode)
-                    .filter(URSMContentNode.cnode_sp_id == cnode_sp_id)
-                    .filter(URSMContentNode.blocknumber < revert_block_number)
-                    .order_by(URSMContentNode.blocknumber.desc())
-                    .first()
-                )
-                if previous_ursm_content_node_entry:
-                    previous_ursm_content_node_entry.is_current = True
-                # Remove previous ursm Content Node entires
-                logger.info(
-                    f"index.py | {self.request.id} | Reverting URSM content node {ursm_content_node_to_revert}"
-                )
-                session.delete(ursm_content_node_to_revert)
+                for future in concurrent.futures.as_completed(futures):
+                    try:
+                        # No return value expected here so we just ensure all futures are resolved
+                        future.result()
+                    except Exception as exc:
+                        logger.error(exc)
 
             # TODO: ASSERT ON IDS GREATER FOR BOTH DATA MODELS
             for user_to_revert in revert_user_entries:
