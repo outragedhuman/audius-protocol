@@ -169,6 +169,35 @@ async function setupConfig(config) {
   return result
 }
 
+const envMap = {
+  stage: {
+    solanaConfig: {
+      SOLANA_ENDPOINT: 'https://audius.rpcpool.com',
+      SOLANA_MINT_ADDRESS: 'BELGiMZQ34SDE6x2FUaML2UHDAgBLS64xvhXjX5tBBZo',
+      SOLANA_TOKEN_ADDRESS: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      SOLANA_CLAIMABLE_TOKEN_PROGRAM_ADDRESS:
+        '2sjQNmUfkV6yKKi4dPR8gWRgtyma5aiymE3aXL2RAZww',
+      SOLANA_REWARDS_MANAGER_PROGRAM_ID:
+        'CDpzvz7DfgbF95jSSCHLX3ERkugyfgn9Fw8ypNZ1hfXp',
+      SOLANA_REWARDS_MANAGER_PROGRAM_PDA:
+        'GaiG9LDYHfZGqeNaoGRzFEnLiwUT7WiC6sA6FDJX9ZPq',
+      SOLANA_REWARDS_MANAGER_TOKEN_PDA:
+        'HJQj8P47BdA7ugjQEn45LaESYrxhiZDygmukt8iumFZJ',
+      // SOLANA_FEE_PAYER_ADDRESS: ,
+      SOLANA_FEE_PAYER_SECRET_KEY: Uint8Array.from([
+        // TODO: FEE PAYER HERE
+      ])
+    },
+    identityServiceConfig: {
+      url: 'https://identityservice.staging.audius.co'
+    },
+    discoveryProviderConfig: {
+      // Manually set DN instead of using auto selection
+      url: 'https://discoveryprovider.staging.audius.co'
+    }
+  }
+}
+
 /**
  * Gets the config for the specified environment
  * @param {'dev'|'stage'|'prod'} env the environment
@@ -176,30 +205,36 @@ async function setupConfig(config) {
  */
 function getConfigForEnv(env) {
   // TODO: Prod/Stage config
-  if (env !== 'dev') {
+  if (env !== 'dev' && env !== 'stage') {
     throw Error(`Environment ${env} not implemented`)
   }
-  const configDir = untildify(config.get('audius_config_dir'))
-  const solanaConfig = require(`${configDir}/solana-program-config.json`)
-  return {
-    solanaConfig: {
-      SOLANA_ENDPOINT: solanaConfig.endpoint,
-      SOLANA_MINT_ADDRESS: solanaConfig.splToken,
-      SOLANA_TOKEN_ADDRESS: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
-      SOLANA_CLAIMABLE_TOKEN_PROGRAM_ADDRESS:
-        solanaConfig.claimableTokenAddress,
-      SOLANA_REWARDS_MANAGER_PROGRAM_ID: solanaConfig.rewardsManagerAddress,
-      SOLANA_REWARDS_MANAGER_PROGRAM_PDA: solanaConfig.rewardsManagerAccount,
-      SOLANA_REWARDS_MANAGER_TOKEN_PDA: solanaConfig.rewardsManagerTokenAccount,
-      SOLANA_FEE_PAYER_ADDRESS: solanaConfig.feePayerWallet.ethAddress,
-      SOLANA_FEE_PAYER_SECRET_KEY: Uint8Array.from(solanaConfig.feePayerWallet)
-    },
-    identityServiceConfig: { url: config.get('identity_service') },
-    discoveryProviderConfig: {
-      // Manually set DN instead of using auto selection
-      url: 'http://dn1_web-server_1:5000'
+  if (env === 'dev') {
+    const configDir = untildify(config.get('audius_config_dir'))
+    const solanaConfig = require(`${configDir}/solana-program-config.json`)
+    return {
+      solanaConfig: {
+        SOLANA_ENDPOINT: solanaConfig.endpoint,
+        SOLANA_MINT_ADDRESS: solanaConfig.splToken,
+        SOLANA_TOKEN_ADDRESS: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+        SOLANA_CLAIMABLE_TOKEN_PROGRAM_ADDRESS:
+          solanaConfig.claimableTokenAddress,
+        SOLANA_REWARDS_MANAGER_PROGRAM_ID: solanaConfig.rewardsManagerAddress,
+        SOLANA_REWARDS_MANAGER_PROGRAM_PDA: solanaConfig.rewardsManagerAccount,
+        SOLANA_REWARDS_MANAGER_TOKEN_PDA:
+          solanaConfig.rewardsManagerTokenAccount,
+        SOLANA_FEE_PAYER_ADDRESS: solanaConfig.feePayerWallet.ethAddress,
+        SOLANA_FEE_PAYER_SECRET_KEY: Uint8Array.from(
+          solanaConfig.feePayerWallet
+        )
+      },
+      identityServiceConfig: { url: config.get('identity_service') },
+      discoveryProviderConfig: {
+        // Manually set DN instead of using auto selection
+        url: 'http://dn1_web-server_1:5000'
+      }
     }
   }
+  return envMap[env]
 }
 
 /**
