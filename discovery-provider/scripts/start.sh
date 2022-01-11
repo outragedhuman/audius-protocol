@@ -1,5 +1,10 @@
 #!/bin/bash
 
+echo "Start discovery node web server"
+echo $audius_db_run_migrations
+echo $audius_db_url
+echo "here\n\n\n"
+
 if [[ -z "$audius_loggly_disable" ]]; then
     if [[ -n "$audius_loggly_token" ]]; then
         audius_loggly_tags=$(echo $audius_loggly_tags | python3 -c "print(' '.join(f'tag=\\\\\"{i}\\\\\"' for i in input().split(',')))")
