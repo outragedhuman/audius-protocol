@@ -1,6 +1,9 @@
 const {
   createUserBankFrom
 } = require('@audius/libs/src/services/solanaWeb3Manager/userBank')
+const {
+  TransactionHandler
+} = require('@audius/libs/src/services/solanaWeb3Manager/transactionHandler')
 const SolanaUtils = require('@audius/libs/src/services/solanaWeb3Manager/utils')
 const IdentityService = require('@audius/libs/src/services/identity')
 const axios = require('axios')
@@ -12,6 +15,7 @@ const { program } = require('commander')
 const fs = require('fs')
 const LineByLineReader = require('line-by-line')
 const qs = require('qs')
+// const bs58 = require('bs58')
 
 /**
  * @typedef {Object} SolanaConfig
@@ -151,6 +155,14 @@ async function setupConfig(config) {
   )
   const connection = new solanaWeb3.Connection(solanaConfig.SOLANA_ENDPOINT)
   const identityService = new IdentityService(identityServiceConfig.url)
+  const transactionHandler = new TransactionHandler({
+    connection,
+    useRelay: false,
+    feePayerKeypair: Keypair.fromSecretKey(
+      solanaConfig.SOLANA_FEE_PAYER_SECRET_KEY
+    )
+  })
+
   const result = {
     claimableTokenPDAKey,
     feePayerKey,
@@ -159,6 +171,7 @@ async function setupConfig(config) {
     claimableTokenProgramKey,
     identityService,
     connection,
+    transactionHandler,
     discoveryProviderUrl: discoveryProviderConfig.url
   }
   Object.keys(result).forEach(key => {
@@ -187,6 +200,7 @@ const envMap = {
       SOLANA_FEE_PAYER_SECRET_KEY: Uint8Array.from([
         // TODO: FEE PAYER HERE
       ])
+      // Or if decoding from string, can use bs58.decode(PRIVATE_KEY_STRING)
     },
     identityServiceConfig: {
       url: 'https://identityservice.staging.audius.co'
@@ -263,17 +277,18 @@ async function main(options) {
    * Hits Discovery to scan through all users and process batch by batch
    */
   const processAll = async () => {
-    let users = await getUserBatch(
-      discoveryProviderUrl,
-      batchNumber,
-      options.batchSize
+    let startingId = batchNumber * options.batchSize
+    let ids = Array.from(Array(options.batchSize)).map(
+      (_, idx) => startingId + idx
     )
+    let users = await getUserBatchFromIds(discoveryProviderUrl, ids)
     while (users.length > 0) {
       const successfulUsers = await processUserBatch(
         users,
         createUserBankParams,
         options.output
       )
+      const hasUserWithoutBank = users.some(u => !u.has_solana_bank)
       const confirmed = await confirmBatch(
         discoveryProviderUrl,
         successfulUsers.filter(Boolean).map(u => u.user_id),
@@ -284,11 +299,20 @@ async function main(options) {
       }
       console.log(`[BATCH] Done with batch ${batchNumber}`)
       batchNumber++
-      users = await getUserBatch(
-        discoveryProviderUrl,
-        batchNumber,
-        options.batchSize
+      startingId += options.batchSize
+      ids = Array.from(Array(options.batchSize)).map(
+        (_, idx) => startingId + idx
       )
+      console.log(
+        `Getting next batch users with batch ${batchNumber} and user ids: ${startingId} - ${
+          startingId + options.batchSize - 1
+        }
+        `
+      )
+      users = await getUserBatchFromIds(discoveryProviderUrl, ids)
+      if (hasUserWithoutBank) {
+        break
+      }
     }
     console.log('[FINISH] Finished processing all users')
   }
@@ -367,11 +391,20 @@ async function main(options) {
         ...createUserBankParams,
         ethAddress: user.wallet
       })
-        .then(() => {
-          console.debug(
-            `[SUCCESS]: Successfully created user bank for user_id=${user.user_id} wallet=${user.wallet}`
-          )
-          return user
+        .then(result => {
+          if (result.error || result.errorCode) {
+            console.error(
+              `[FAILED]: Failed to create user bank for user_id=${user.user_id} wallet=${user.wallet} error=${result.error} and errorCode=${result.errorCode}`
+            )
+            if (options.output) {
+              fs.appendFileSync(options.output, user.user_id + '\n')
+            }
+          } else {
+            console.debug(
+              `[SUCCESS]: Successfully created user bank for user_id=${user.user_id} wallet=${user.wallet}`
+            )
+            return user
+          }
         })
         .catch(e => {
           console.error(
