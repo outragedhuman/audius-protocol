@@ -15,7 +15,7 @@ const { program } = require('commander')
 const fs = require('fs')
 const LineByLineReader = require('line-by-line')
 const qs = require('qs')
-// const bs58 = require('bs58')
+const bs58 = require('bs58')
 
 /**
  * @typedef {Object} SolanaConfig
@@ -97,11 +97,28 @@ async function getUserBatchFromIds(discoveryProviderUrl, ids) {
  * @returns {boolean} whether the batch was confirmed or not
  */
 async function confirmBatch(discoveryProviderUrl, ids, options, attempt = 0) {
-  const users = await getUserBatchFromIds(discoveryProviderUrl, ids)
-  if (users.every(u => u.has_solana_bank)) {
-    console.debug('[CONFIRMER]: Successfully confirmed batch')
-    return true
-  } else {
+  try {
+    const users = await getUserBatchFromIds(discoveryProviderUrl, ids)
+    if (users.every(u => u.has_solana_bank)) {
+      console.debug('[CONFIRMER]: Successfully confirmed batch')
+      return true
+    } else {
+      if (attempt < options.retries || options.retries < 0) {
+        console.debug(
+          `[CONFIRMER]: Failed to confirm on attempt=${attempt}. Retrying...`
+        )
+        return new Promise((resolve, reject) => {
+          setTimeout(() => {
+            resolve(
+              confirmBatch(discoveryProviderUrl, ids, options, attempt + 1)
+            )
+          }, options.throttle)
+        })
+      } else {
+        return false
+      }
+    }
+  } catch (e) {
     if (attempt < options.retries || options.retries < 0) {
       console.debug(
         `[CONFIRMER]: Failed to confirm on attempt=${attempt}. Retrying...`
@@ -160,7 +177,8 @@ async function setupConfig(config) {
     useRelay: false,
     feePayerKeypair: Keypair.fromSecretKey(
       solanaConfig.SOLANA_FEE_PAYER_SECRET_KEY
-    )
+    ),
+    skipPreflight: false
   })
 
   const result = {
@@ -185,7 +203,7 @@ async function setupConfig(config) {
 const envMap = {
   stage: {
     solanaConfig: {
-      SOLANA_ENDPOINT: 'https://audius.rpcpool.com',
+      SOLANA_ENDPOINT: 'https://audius.rpcpool.com', // NOTE: Add api key to rpc pool url to remove rate limitz
       SOLANA_MINT_ADDRESS: 'BELGiMZQ34SDE6x2FUaML2UHDAgBLS64xvhXjX5tBBZo',
       SOLANA_TOKEN_ADDRESS: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
       SOLANA_CLAIMABLE_TOKEN_PROGRAM_ADDRESS:
@@ -196,7 +214,6 @@ const envMap = {
         'GaiG9LDYHfZGqeNaoGRzFEnLiwUT7WiC6sA6FDJX9ZPq',
       SOLANA_REWARDS_MANAGER_TOKEN_PDA:
         'HJQj8P47BdA7ugjQEn45LaESYrxhiZDygmukt8iumFZJ',
-      // SOLANA_FEE_PAYER_ADDRESS: ,
       SOLANA_FEE_PAYER_SECRET_KEY: Uint8Array.from([
         // TODO: FEE PAYER HERE
       ])
@@ -282,22 +299,69 @@ async function main(options) {
       (_, idx) => startingId + idx
     )
     let users = await getUserBatchFromIds(discoveryProviderUrl, ids)
+    const totals = {
+      success: 0,
+      failed: 0,
+      existsing: 0
+    }
+    const startProgamTime = new Date().getTime()
     while (users.length > 0) {
+      const startLoop = new Date().getTime()
       const successfulUsers = await processUserBatch(
         users,
         createUserBankParams,
         options.output
       )
-      const hasUserWithoutBank = users.some(u => !u.has_solana_bank)
+      const usersWithoutBank = users.filter(u => !u.has_solana_bank)
+      const successfulUserIds = successfulUsers.filter(Boolean).map(u => u.user_id)
+
+      // TODO: Make with retry a cli arg
+      const withRetry = true
+      let retryCount = 0
+      const numRetries = 5
+      let successfulUserIdsSet = new Set(successfulUserIds)
+      let failedUsers = users.filter(u => !successfulUserIdsSet.has(u.user_id))
+      while (withRetry && retryCount < numRetries && failedUsers.length > 0) {
+        // exponential wait backoff for retry
+        await new Promise(resolve =>
+          setTimeout(resolve, 100 * Math.pow(retryCount + 1, 2))
+        )
+
+        const retrySuccessfulUsers = await processUserBatch(
+          failedUsers,
+          createUserBankParams,
+          options.output
+        )
+        const retriedSuccessIds = retrySuccessfulUsers.filter(Boolean).map(u => u.user_id)
+        console.log(`[RETRY] Succeeded with ${retriedSuccessIds.length} of ${retrySuccessfulUsers.length} new successes on attempt ${retryCount+1}`)
+        successfulUserIds.push(...retriedSuccessIds)
+
+        // Prep for next iteration
+        successfulUserIdsSet = new Set(retriedSuccessIds)
+        failedUsers = failedUsers.filter(u => !successfulUserIdsSet.has(u.user_id))
+        retryCount += 1
+      }
+
       const confirmed = await confirmBatch(
         discoveryProviderUrl,
-        successfulUsers.filter(Boolean).map(u => u.user_id),
+        successfulUserIds,
         options
       )
       if (!confirmed) {
         console.error(`[ERROR]: Could not confirm batch ${batchNumber}`)
       }
-      console.log(`[BATCH] Done with batch ${batchNumber}`)
+      const endTime = new Date().getTime()
+      const existingUserBankCount = users.length - usersWithoutBank.length
+      const successUserCount = successfulUserIds.length - existingUserBankCount
+      const failedUserCount =
+        users.length - existingUserBankCount - successUserCount
+      totals.success += successUserCount
+      totals.failed += failedUserCount
+      totals.existsing += existingUserBankCount
+      console.log(`[BATCH] Done with batch ${batchNumber}: ${successUserCount} successs, ${failedUserCount} failed, ${existingUserBankCount} existing  - total: ${users.length} users in ${endTime - startLoop}ms`)
+      if (batchNumber % 5 === 0) {
+        console.log(`[TOTAL] Success ${totals.success}, Failed ${totals.failed}, Existing ${totals.existsing} ${new Date().getTime() - startProgamTime}ms for avg ${(new Date().getTime() - startProgamTime) / totals.success / 1000} sec/user `)
+      }
       batchNumber++
       startingId += options.batchSize
       ids = Array.from(Array(options.batchSize)).map(
@@ -310,9 +374,6 @@ async function main(options) {
         `
       )
       users = await getUserBatchFromIds(discoveryProviderUrl, ids)
-      if (hasUserWithoutBank) {
-        break
-      }
     }
     console.log('[FINISH] Finished processing all users')
   }
