@@ -26,15 +26,16 @@ eth_registry_instance = eth_web3.eth.contract(
 def get_oracle_addresses_from_chain(redis) -> List[str]:
     try:
         # Note: this call will fail until the eth rewards manager contract is deployed
-        eth_rewards_manager_address = eth_registry_instance.functions.getContract(
-            bytes("EthRewardsManagerProxy", "utf-8")
-        ).call()
-        eth_rewards_manager_instance = eth_web3.eth.contract(
-            address=eth_rewards_manager_address, abi=REWARDS_CONTRACT_ABI
-        )
-        oracle_addresses = (
-            eth_rewards_manager_instance.functions.getAntiAbuseOracleAddresses().call()
-        )
+        # eth_rewards_manager_address = eth_registry_instance.functions.getContract(
+        #     bytes("EthRewardsManagerProxy", "utf-8")
+        # ).call()
+        # eth_rewards_manager_instance = eth_web3.eth.contract(
+        #     address=eth_rewards_manager_address, abi=REWARDS_CONTRACT_ABI
+        # )
+        # oracle_addresses = (
+        #     eth_rewards_manager_instance.functions.getAntiAbuseOracleAddresses().call()
+        # )
+        oracle_addresses = ["0x9811BA3eAB1F2Cd9A2dFeDB19e8c2a69729DC8b6"]
         redis.set(oracle_addresses_key, ",".join(oracle_addresses))
         return oracle_addresses
     except Exception as e:
