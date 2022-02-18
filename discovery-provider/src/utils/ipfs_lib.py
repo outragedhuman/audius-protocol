@@ -25,9 +25,14 @@ class IPFSClient:
         redis=None,
         eth_abi_values=None,
     ):
-        self._api = ipfshttpclient.connect(
-            f"/dns/{ipfs_peer_host}/tcp/{ipfs_peer_port}/http"
-        )
+        try:
+            self._api = ipfshttpclient.connect(
+                f"/dns/{ipfs_peer_host}/tcp/{ipfs_peer_port}/http"
+            )
+        except:
+            logger.warning("IPFSCLIENT | Failed to initialize, setting to null")
+            self._api = None
+
         logger.warning("IPFSCLIENT | initializing")
 
         # Fetch list of registered content nodes to use during init.
@@ -48,7 +53,11 @@ class IPFSClient:
             self._cnode_endpoints = []
             logger.warning("IPFSCLIENT | couldn't fetch _cnode_endpoints on init")
 
-        self._ipfsid = self._api.id()
+        if self._api:
+            self._ipfsid = self._api.id()
+        else:
+            self._ipfsid = 'dummyid'
+
         self._multiaddr = get_valid_multiaddr_from_id_json(self._ipfsid)
 
     def get_peer_info(self):
