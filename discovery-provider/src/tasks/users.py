@@ -334,13 +334,15 @@ def parse_user_event(
                 "profile_picture_sizes" in ipfs_metadata
                 and ipfs_metadata["profile_picture_sizes"]
             ):
-                user_record.profile_picture = ipfs_metadata["profile_picture_sizes"]
+                user_record.profile_picture_sizes = ipfs_metadata[
+                    "profile_picture_sizes"
+                ]
 
             if (
                 "cover_photo_sizes" in ipfs_metadata
                 and ipfs_metadata["cover_photo_sizes"]
             ):
-                user_record.cover_photo = ipfs_metadata["cover_photo_sizes"]
+                user_record.cover_photo_sizes = ipfs_metadata["cover_photo_sizes"]
 
             if (
                 "collectibles" in ipfs_metadata
