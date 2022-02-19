@@ -37,6 +37,7 @@ def user_replica_set_state_update(
 ) -> Tuple[int, Set]:
     """Return Tuple containing int representing number of User model state changes found in transaction and set of user_id values"""
 
+    begin_user_replica_set_state_update = datetime.now()
     event_blockhash = update_task.web3.toHex(block_hash)
     num_user_replica_set_changes = 0
     skipped_tx_count = 0
@@ -189,6 +190,10 @@ def user_replica_set_state_update(
         invalidate_old_cnode_record(session, content_node_id)
         session.add(value_obj["content_node"])
 
+    if num_user_replica_set_changes:
+        logger.info(
+            f"index.py | user_replica_set.py | user_replica_set_state_update | finished user_replica_set_state_update in {datetime.now() - begin_user_replica_set_state_update} // per event: {(datetime.now() - begin_user_replica_set_state_update) / num_user_replica_set_changes} secs"
+        )
     return num_user_replica_set_changes, user_ids
 
 

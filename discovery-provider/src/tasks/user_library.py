@@ -25,6 +25,7 @@ def user_library_state_update(
     _blacklisted_cids,
 ) -> Tuple[int, Set]:
     """Return Tuple containing int representing number of User Library model state changes found in transaction and empty Set (to align with fn signature of other _state_update functions."""
+    begin_user_library_state_update = datetime.now()
     empty_set: Set[int] = set()
     num_total_changes = 0
     if not user_library_factory_txs:
@@ -114,6 +115,10 @@ def user_library_state_update(
             dispatch_favorite(challenge_bus, save, block_number)
         num_total_changes += len(playlist_ids)
 
+    if num_total_changes:
+        logger.info(
+            f"index.py | user_library.py | user_library_state_update | finished user_library_state_update in {datetime.now() - begin_user_library_state_update} // per event: {(datetime.now() - begin_user_library_state_update) / num_total_changes} secs"
+        )
     return num_total_changes, empty_set
 
 

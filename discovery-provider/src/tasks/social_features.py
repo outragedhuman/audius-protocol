@@ -26,6 +26,7 @@ def social_feature_state_update(
     _blacklisted_cids,
 ) -> Tuple[int, Set]:
     """Return Tuple containing int representing number of social feature related state changes in this transaction and empty Set (to align with other _state_update function signatures)"""
+    begin_social_feature_state_update = datetime.now()
     empty_set: Set[int] = set()
     num_total_changes = 0
     if not social_feature_factory_txs:
@@ -150,6 +151,11 @@ def social_feature_state_update(
             dispatch_challenge_follow(challenge_bus, follow, block_number)
             queue_related_artist_calculation(update_task.redis, followee_user_id)
         num_total_changes += len(followee_user_ids)
+
+    if num_total_changes:
+        logger.info(
+            f"index.py | social_features.py | social_feature_state_update | finished social_feature_state_update in {datetime.now() - begin_social_feature_state_update} // per event: {(datetime.now() - begin_social_feature_state_update) / num_total_changes} secs"
+        )
     return num_total_changes, empty_set
 
 

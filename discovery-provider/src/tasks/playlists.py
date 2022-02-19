@@ -31,6 +31,8 @@ def playlist_state_update(
     _blacklisted_cids,
 ) -> Tuple[int, Set]:
     """Return Tuple containing int representing number of Playlist model state changes found in transaction and set of processed playlist IDs."""
+    begin_playlist_state_update = datetime.now()
+
     blockhash = update_task.web3.toHex(block_hash)
     num_total_changes = 0
     skipped_tx_count = 0
@@ -111,6 +113,10 @@ def playlist_state_update(
             invalidate_old_playlist(session, playlist_id)
             session.add(value_obj["playlist"])
 
+    if num_total_changes:
+        logger.info(
+            f"index.py | playlists.py | playlist_state_update | finished playlist_state_update in {datetime.now() - begin_playlist_state_update} // per event: {(datetime.now() - begin_playlist_state_update) / num_total_changes} secs"
+        )
     return num_total_changes, playlist_ids
 
 
