@@ -132,12 +132,15 @@ class IPFSClient:
             raise Exception(
                 f"IPFSCLIENT | Invalid URL from provided gateway addr - {url}"
             )
-        logger.info(f"IPFSCLIENT | Requesting metadata {url}")
+        logger.info(f"IPFSCLIENT | load_metadata_url requesting metadata {url}")
+        start_time = time.time()
         r = requests.get(url, timeout=max_timeout)
+        logger.info(f"IPFSCLIENT | load_metadata_url to {url} finished in {time.time() - start_time} seconds, status: {r.status_code}")
         return r
 
     def query_ipfs_metadata_json(self, gateway_ipfs_urls, default_metadata_fields):
         formatted_json = None
+        start_time = time.time()
         with concurrent.futures.ThreadPoolExecutor() as executor:
             # Start the load operations and mark each future with its URL
             future_to_url = {
@@ -156,7 +159,7 @@ class IPFSClient:
                         default_metadata_fields, r.json()
                     )
                     # Exit loop if dict is successfully retrieved
-                    logger.warning(f"IPFSCLIENT | Retrieved from {url}")
+                    logger.info(f"IPFSCLIENT | query_ipfs_metadata_json Retrieved from {url} took {time.time() - start_time} seconds")
                     self.force_clear_queue_and_stop_task_execution(executor)
                     break
                 except Exception as exc:
