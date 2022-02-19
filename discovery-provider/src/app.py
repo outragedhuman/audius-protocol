@@ -354,7 +354,7 @@ def configure_celery(celery, test_config=None):
             if "url" in test_config["db"]:
                 database_url = test_config["db"]["url"]
 
-    ipld_interval = int(shared_config["discprov"]["blacklist_block_indexing_interval"])
+    # ipld_interval = int(shared_config["discprov"]["blacklist_block_indexing_interval"])
     # default is 5 seconds
     indexing_interval_sec = int(
         shared_config["discprov"]["block_processing_interval_sec"]
@@ -364,7 +364,7 @@ def configure_celery(celery, test_config=None):
     celery.conf.update(
         imports=[
             "src.tasks.index",
-            "src.tasks.index_blacklist",
+            # "src.tasks.index_blacklist",
             "src.tasks.index_plays",
             "src.tasks.index_metrics",
             "src.tasks.index_materialized_views",
