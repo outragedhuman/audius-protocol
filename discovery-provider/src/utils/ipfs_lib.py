@@ -164,9 +164,7 @@ class IPFSClient:
         with concurrent.futures.ThreadPoolExecutor() as executor:
             # Start the load operations and mark each future with its URL
             future_to_url = {
-                executor.submit(
-                    self.load_metadata_url, url, NEW_BLOCK_TIMEOUT_SECONDS
-                ): url
+                executor.submit(self.load_metadata_url, url, 3): url
                 for url in gateway_ipfs_urls
             }
             for future in concurrent.futures.as_completed(future_to_url):
