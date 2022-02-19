@@ -134,8 +134,14 @@ class IPFSClient:
             )
         logger.info(f"IPFSCLIENT | load_metadata_url requesting metadata {url}")
         start_time = time.time()
+
         r = requests.get(url, timeout=max_timeout)
+
         logger.info(f"IPFSCLIENT | load_metadata_url to {url} finished in {time.time() - start_time} seconds, status: {r.status_code}")
+
+        if r.status_code != 200:
+            raise Exception("Invalid status_code")
+
         return r
 
     def query_ipfs_metadata_json(self, gateway_ipfs_urls, default_metadata_fields):
@@ -147,24 +153,18 @@ class IPFSClient:
                 executor.submit(self.load_metadata_url, url, 20): url
                 for url in gateway_ipfs_urls
             }
-            for future in concurrent.futures.as_completed(future_to_url):
-                url = future_to_url[future]
-                try:
-                    r = future.result()
-                    if r.status_code != 200:
-                        logger.warning(f"IPFSCLIENT | {url} - {r.status_code}")
-                        raise Exception("Invalid status_code")
-                    # Override with retrieved JSON value
-                    formatted_json = self.get_metadata_from_json(
-                        default_metadata_fields, r.json()
-                    )
-                    # Exit loop if dict is successfully retrieved
-                    logger.info(f"IPFSCLIENT | query_ipfs_metadata_json Retrieved from {url} took {time.time() - start_time} seconds")
-                    self.force_clear_queue_and_stop_task_execution(executor)
-                    break
-                except Exception as exc:
-                    logger.error(f"IPFSClient | {url} generated an exception: {exc}")
-        return formatted_json
+            done, not_done = concurrent.futures.wait(list(future_to_url.keys()), return_when='FIRST_COMPLETED')
+            first_done_future = done.pop()
+            first_done = first_done_future.result()
+
+            formatted_json = self.get_metadata_from_json(
+                default_metadata_fields, first_done.json()
+            )
+
+            url = future_to_url[first_done_future]
+
+            logger.info(f"IPFSCLIENT | query_ipfs_metadata_json Retrieved from {url} took {time.time() - start_time} seconds")
+            return formatted_json
 
     def get_metadata_from_gateway(
         self, multihash, default_metadata_fields, user_replica_set: str = None
