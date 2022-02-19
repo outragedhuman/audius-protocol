@@ -36,11 +36,18 @@ class IPFSClient:
         # indexing starting and this getting populated, run this on init in the instance
         # in the celery worker
         if eth_web3 and shared_config and redis and eth_abi_values:
-            self._cnode_endpoints = list(
+            self._cnode_endpoints = [
+                "https://creatornode3.audius.co",
+                "https://creatornode.audius.co",
+                "https://creatornode2.audius.co",
+                "https://content-node.audius.co",
+            ] + list(
                 fetch_all_registered_content_nodes(
                     eth_web3, shared_config, redis, eth_abi_values
                 )
             )
+
+            self._cnode_endpoints += []
             logger.warning(
                 f"IPFSCLIENT | fetch _cnode_endpoints on init got {self._cnode_endpoints}"
             )
@@ -82,11 +89,6 @@ class IPFSClient:
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
             metadata_futures = {}
-            metadata_futures[
-                executor.submit(
-                    self.get_metadata_from_ipfs_node, multihash, default_metadata_fields
-                )
-            ] = "metadata_from_ipfs_node"
             metadata_futures[
                 executor.submit(
                     self.get_metadata_from_gateway,
@@ -153,6 +155,7 @@ class IPFSClient:
             raise Exception(
                 f"IPFSCLIENT | Invalid URL from provided gateway addr - {url}"
             )
+        logger.info(f"IPFSCLIENT | Requesting metadata {url}")
         r = requests.get(url, timeout=max_timeout)
         return r
 
@@ -217,13 +220,6 @@ class IPFSClient:
                 logger.error(
                     "IPFSCLIENT | get_metadata_from_gateway \
                         \nfailed to fetch metadata from user replica gateways"
-                )
-                # Remove replica set from gateway endpoints before querying
-                gateway_endpoints = list(
-                    filter(
-                        lambda endpoint: endpoint not in user_replicas,
-                        gateway_endpoints,
-                    )
                 )
 
         logger.warning(
