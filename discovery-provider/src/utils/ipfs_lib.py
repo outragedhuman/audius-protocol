@@ -182,7 +182,7 @@ class IPFSClient:
             user_replicas = user_replica_set.split(",")
             try:
                 query_urls = [
-                    f"{addr}/ipfs/{multihash}?dp={time.time()}"
+                    f"{addr}/ipfs/{multihash}"
                     for addr in user_replicas
                 ]
                 data = self.query_ipfs_metadata_json(
@@ -204,7 +204,7 @@ class IPFSClient:
         )
 
         query_urls = [
-            f"{addr}/ipfs/{multihash}?dp={time.time()}" for addr in gateway_endpoints
+            f"{addr}/ipfs/{multihash}" for addr in gateway_endpoints
         ]
         data = self.query_ipfs_metadata_json(query_urls, default_metadata_fields)
         if data is None:
