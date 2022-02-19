@@ -396,10 +396,10 @@ def configure_celery(celery, test_config=None):
                 "task": "update_discovery_provider",
                 "schedule": timedelta(seconds=indexing_interval_sec),
             },
-            "update_ipld_blacklist": {
-                "task": "update_ipld_blacklist",
-                "schedule": timedelta(seconds=ipld_interval),
-            },
+            # "update_ipld_blacklist": {
+            #     "task": "update_ipld_blacklist",
+            #     "schedule": timedelta(seconds=ipld_interval),
+            # },
             "update_play_count": {
                 "task": "update_play_count",
                 "schedule": timedelta(seconds=60),
