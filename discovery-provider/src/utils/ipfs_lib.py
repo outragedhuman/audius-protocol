@@ -141,7 +141,7 @@ class IPFSClient:
         with concurrent.futures.ThreadPoolExecutor() as executor:
             # Start the load operations and mark each future with its URL
             future_to_url = {
-                executor.submit(self.load_metadata_url, url, 3): url
+                executor.submit(self.load_metadata_url, url, 10): url
                 for url in gateway_ipfs_urls
             }
             for future in concurrent.futures.as_completed(future_to_url):
@@ -181,10 +181,7 @@ class IPFSClient:
         if user_replica_set and isinstance(user_replica_set, str):
             user_replicas = user_replica_set.split(",")
             try:
-                query_urls = [
-                    f"{addr}/ipfs/{multihash}?dp={time.time()}"
-                    for addr in user_replicas
-                ]
+                query_urls = [f"{addr}/ipfs/{multihash}" for addr in user_replicas]
                 data = self.query_ipfs_metadata_json(
                     query_urls, default_metadata_fields
                 )
@@ -203,9 +200,7 @@ class IPFSClient:
                 \ncnode_endpoints: {self._cnode_endpoints}"
         )
 
-        query_urls = [
-            f"{addr}/ipfs/{multihash}?dp={time.time()}" for addr in gateway_endpoints
-        ]
+        query_urls = [f"{addr}/ipfs/{multihash}" for addr in gateway_endpoints]
         data = self.query_ipfs_metadata_json(query_urls, default_metadata_fields)
         if data is None:
             raise Exception(
