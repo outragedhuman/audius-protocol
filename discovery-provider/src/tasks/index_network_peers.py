@@ -115,7 +115,9 @@ def update_network_peers(self):
             peers_list = list(all_peers)
             # Update creator node url list in IPFS Client
             # This list of known nodes is used to traverse and retrieve metadata from gateways
-            ipfs_client.update_cnode_urls(peers_list)
+
+            # ipfs_client.update_cnode_urls(peers_list)
+
             # Connect to all peers
             connect_peers(self, peers_list)
         else:
