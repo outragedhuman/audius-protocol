@@ -193,7 +193,7 @@ const getCID = async (req, res) => {
     })
     if (!queryResults) {
       decisionTree.push({
-        stage: `DB_CID_QUERY_FAILED`
+        stage: `DB_CID_QUERY_CID_NOT_FOUND`
       })
       logGetCIDDecisionTree(decisionTree, req)
       return sendResponse(
@@ -251,9 +251,10 @@ const getCID = async (req, res) => {
    *    b. If found, attempt to stream from file system
    * 4. Else, continue
    */
+  let tryStartMs = Date.now()
   try {
-    // Add a rehydration task to the queue to be processed in the background
     startMs = Date.now()
+    // Add a rehydration task to the queue to be processed in the background
     RehydrateIpfsQueue.addRehydrateIpfsFromFsIfNecessaryTask(CID, storagePath, {
       logContext: req.logContext
     })
@@ -278,10 +279,11 @@ const getCID = async (req, res) => {
     req.logger.info(`Failed to retrieve ${storagePath} from FS`)
     decisionTree.push({
       stage: `STREAM_FROM_FILE_SYSTEM_FAILED`,
-      time: `${Date.now() - startMs}ms`
+      time: `${Date.now() - tryStartMs}ms`
     })
 
     // ugly nested try/catch but don't want findCIDInNetwork to stop execution of the rest of the route
+    tryStartMs = Date.now()
     try {
       startMs = Date.now()
       const libs = req.app.get('audiusLibs')
@@ -303,7 +305,7 @@ const getCID = async (req, res) => {
     } catch (e) {
       decisionTree.push({
         stage: `FIND_CID_IN_NETWORK_ERROR`,
-        time: `${Date.now() - startMs}ms`
+        time: `${Date.now() - tryStartMs}ms`
       })
       logGetCIDDecisionTree(decisionTree, req)
       req.logger.error(
@@ -318,6 +320,7 @@ const getCID = async (req, res) => {
    * 2. Throw error if unavail
    * 3. If avail, Stream file from IPFS
    */
+  tryStartMs = Date.now()
   try {
     // Add content length headers
     // If the IPFS stat call fails or times out, an error is thrown
@@ -411,7 +414,7 @@ const getCID = async (req, res) => {
 
     decisionTree.push({
       stage: 'STREAM_FROM_IPFS_FAILURE',
-      time: `${Date.now() - startMs}ms`
+      time: `${Date.now() - tryStartMs}ms`
     })
     logGetCIDDecisionTree(decisionTree, req)
 
