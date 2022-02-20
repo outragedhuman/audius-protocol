@@ -82,11 +82,11 @@ class IPFSClient:
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
             metadata_futures = {}
-            metadata_futures[
-                executor.submit(
-                    self.get_metadata_from_ipfs_node, multihash, default_metadata_fields
-                )
-            ] = "metadata_from_ipfs_node"
+            # metadata_futures[
+            #     executor.submit(
+            #         self.get_metadata_from_ipfs_node, multihash, default_metadata_fields
+            #     )
+            # ] = "metadata_from_ipfs_node"
             metadata_futures[
                 executor.submit(
                     self.get_metadata_from_gateway,
