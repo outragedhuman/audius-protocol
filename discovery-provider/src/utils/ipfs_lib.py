@@ -160,7 +160,9 @@ class IPFSClient:
                     )
                     # Exit loop if dict is successfully retrieved
                     logger.info(f"IPFSCLIENT | query_ipfs_metadata_json Retrieved from {url} took {time.time() - start_time} seconds")
-                    # self.force_clear_queue_and_stop_task_execution(executor)
+                    start_shutdown = time.time()
+                    self.force_clear_queue_and_stop_task_execution(executor)
+                    logger.info(f"IPFSCLIENT | shutdown queue took {time.time() - start_shutdown} seconds")
                     return formatted_json
 
                 except Exception as exc:
