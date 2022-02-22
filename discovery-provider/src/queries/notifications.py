@@ -876,6 +876,10 @@ def notifications():
             track_id = entry.track_id
             owner_info[const.tracks][track_id] = owner
 
+        logger.info(
+            f"notifications.py | owner info at {datetime.now() - start_time}, owners {len(track_owner_results)}"
+        )
+
         # Get playlist updates
         today = date.today()
         thirty_days_ago = today - timedelta(days=30)
@@ -892,6 +896,10 @@ def notifications():
         )
 
         playlist_update_results = playlist_update_query.all()
+
+        logger.info(
+            f"notifications.py | get playlist updates at {datetime.now() - start_time}, playlist updates {len(playlist_update_results)}"
+        )
 
         # Represents all playlist update notifications
         playlist_update_notifications = []
@@ -920,6 +928,10 @@ def notifications():
             Save.save_item_id.in_(playlist_update_notifs_by_playlist_id.keys()),
         )
         playlist_favorites_results = playlist_favorites_query.all()
+
+        logger.info(
+            f"notifications.py | get playlist favorites {datetime.now() - start_time}, playlist favorites {len(playlist_favorites_results)}"
+        )
 
         # dictionary of playlist id => users that favorited said playlist
         # e.g. { playlist1: [user1, user2, ...], ... }
@@ -956,7 +968,7 @@ def notifications():
         notifications_unsorted.extend(playlist_update_notifications)
 
         logger.info(
-            f"notifications.py | playlist updates at {datetime.now() - start_time}"
+            f"notifications.py | all playlist updates at {datetime.now() - start_time}"
         )
 
     # Final sort - TODO: can we sort by timestamp?
