@@ -200,6 +200,10 @@ async function setupConfig(config) {
   return result
 }
 
+// DO NOT COMMIT
+const PRIVATE_KEY_STRING = process.env.PRIVATE_KEY_STRING
+const RPC_API_KEY = process.env.RPC_API_KEY || ''
+
 const envMap = {
   stage: {
     solanaConfig: {
@@ -226,6 +230,31 @@ const envMap = {
       // Manually set DN instead of using auto selection
       url: 'https://discoveryprovider.staging.audius.co'
     }
+  },
+  prod: {
+    solanaConfig: {
+      SOLANA_ENDPOINT:
+        `https://audius.rpcpool.com/${RPC_API_KEY}`,
+      SOLANA_MINT_ADDRESS: '9LzCMqDgTKYz9Drzqnpgee3SGa89up3a247ypMj2xrqM',
+      SOLANA_TOKEN_ADDRESS: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+      SOLANA_CLAIMABLE_TOKEN_PROGRAM_ADDRESS:
+        'Ewkv3JahEFRKkcJmpoKB7pXbnUHwjAyXiwEo4ZY2rezQ',
+      SOLANA_REWARDS_MANAGER_PROGRAM_ID:
+        'DDZDcYdQFEMwcu2Mwo75yGFjJ1mUQyyXLWzhZLEVFcei',
+      SOLANA_REWARDS_MANAGER_PROGRAM_PDA:
+        '71hWFVYokLaN1PNYzTAWi13EfJ7Xt9VbSWUKsXUT8mxE',
+      SOLANA_REWARDS_MANAGER_TOKEN_PDA:
+        '3V9opXNpHmPPymKeq7CYD8wWMH8wzFXmqEkNdzfsZhYq',
+      SOLANA_FEE_PAYER_SECRET_KEY: Uint8Array.from(JSON.parse(PRIVATE_KEY_STRING))
+      // Or if decoding from string, can use bs58.decode(PRIVATE_KEY_STRING)
+    },
+    identityServiceConfig: {
+      url: 'https://identityservice.audius.co'
+    },
+    discoveryProviderConfig: {
+      // Manually set DN instead of using auto selection
+      url: 'https://discoveryprovider.audius.co'
+    }
   }
 }
 
@@ -236,7 +265,7 @@ const envMap = {
  */
 function getConfigForEnv(env) {
   // TODO: Prod/Stage config
-  if (env !== 'dev' && env !== 'stage') {
+  if (env !== 'dev' && env !== 'stage' && env !== 'prod') {
     throw Error(`Environment ${env} not implemented`)
   }
   if (env === 'dev') {
@@ -342,14 +371,15 @@ async function main(options) {
         retryCount += 1
       }
 
-      const confirmed = await confirmBatch(
-        discoveryProviderUrl,
-        successfulUserIds,
-        options
-      )
-      if (!confirmed) {
-        console.error(`[ERROR]: Could not confirm batch ${batchNumber}`)
-      }
+      // Comfirming users will validate that the discovery node has indexed the user bank account, but increases the time to complete the script
+      // const confirmed = await confirmBatch(
+      //   discoveryProviderUrl,
+      //   successfulUserIds,
+      //   options
+      // )
+      // if (!confirmed) {
+      //   console.error(`[ERROR]: Could not confirm batch ${batchNumber}`)
+      // }
       const endTime = new Date().getTime()
       const existingUserBankCount = users.length - usersWithoutBank.length
       const successUserCount = successfulUserIds.length - existingUserBankCount
@@ -359,7 +389,7 @@ async function main(options) {
       totals.failed += failedUserCount
       totals.existsing += existingUserBankCount
       console.log(`[BATCH] Done with batch ${batchNumber}: ${successUserCount} successs, ${failedUserCount} failed, ${existingUserBankCount} existing  - total: ${users.length} users in ${endTime - startLoop}ms`)
-      if (batchNumber % 5 === 0) {
+      if (batchNumber % 2 === 0) {
         console.log(`[TOTAL] Success ${totals.success}, Failed ${totals.failed}, Existing ${totals.existsing} ${new Date().getTime() - startProgamTime}ms for avg ${(new Date().getTime() - startProgamTime) / totals.success / 1000} sec/user `)
       }
       batchNumber++
@@ -404,14 +434,42 @@ async function main(options) {
           createUserBankParams,
           options.output
         )
-        const confirmed = await confirmBatch(
-          discoveryProviderUrl,
-          successfulUsers.filter(Boolean).map(u => u.user_id),
-          options
-        )
-        if (!confirmed) {
-          console.error(`[ERROR]: Could not confirm batch ${batchNumber}`)
+
+        const successfulUserIds = successfulUsers.filter(Boolean).map(u => u.user_id)
+
+        const withRetry = true
+        let retryCount = 0
+        let numRetries = 5
+        let successfulUserIdsSet = new Set(successfulUserIds)
+        let failedUsers = users.filter(u => !successfulUserIdsSet.has(u.user_id))
+        while (withRetry && retryCount < numRetries && failedUsers.length > 0) {
+          // exponential wait backoff for retry
+          await new Promise(resolve =>
+            setTimeout(resolve, 100 * Math.pow(retryCount + 1, 2))
+          )
+
+          const retrySuccessfulUsers = await processUserBatch(
+            failedUsers,
+            createUserBankParams,
+            options.output
+          )
+          const retriedSuccessIds = retrySuccessfulUsers.filter(Boolean).map(u => u.user_id)
+          console.log(`[RETRY] Succeeded with ${retriedSuccessIds.length} of ${retrySuccessfulUsers.length} new successes on attempt ${retryCount+1}`)
+          successfulUserIds.push(...retriedSuccessIds)
+
+          // Prep for next iteration
+          successfulUserIdsSet = new Set(retriedSuccessIds)
+          failedUsers = failedUsers.filter(u => !successfulUserIdsSet.has(u.user_id))
+          retryCount += 1
         }
+        // const confirmed = await confirmBatch(
+        //   discoveryProviderUrl,
+        //   successfulUsers.filter(Boolean).map(u => u.user_id),
+        //   options
+        // )
+        // if (!confirmed) {
+        //   console.error(`[ERROR]: Could not confirm batch ${batchNumber}`)
+        // }
         idBatch = []
         batchNumber++
         console.log(`[BATCH] Done with batch ${batchNumber++}`)
