@@ -982,6 +982,10 @@ def notifications():
         reverse=False,
     )
 
+    logger.info(
+        f"notifications.py | sorted notifications {datetime.now() - start_time}"
+    )
+
     return api_helpers.success_response(
         {
             "notifications": sorted_notifications,
