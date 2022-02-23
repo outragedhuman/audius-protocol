@@ -950,6 +950,10 @@ def notifications():
             {},
         )
 
+        logger.info(
+            f"notifications.py | computed users that favorited dict {datetime.now() - start_time}"
+        )
+
         for playlist_id in users_that_favorited_playlists_dict:
             # TODO: We probably do not need this check because we are filtering
             # playlist_favorites_query to only matching ids
