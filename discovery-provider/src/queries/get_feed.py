@@ -1,5 +1,7 @@
 import datetime
+import json
 
+from elasticsearch import Elasticsearch
 from sqlalchemy import and_, desc, func, or_
 from src import api_helpers
 from src.models import Follow, Playlist, Repost, RepostType, SaveType, Track
@@ -16,10 +18,13 @@ from src.queries.query_helpers import (
 from src.utils import helpers
 from src.utils.db_session import get_db_read_replica
 
+es = Elasticsearch("http://elasticsearch:9200")
+
 trackDedupeMaxMinutes = 10
 
 
 def get_feed(args):
+
     feed_results = []
     db = get_db_read_replica()
 
@@ -44,6 +49,18 @@ def get_feed(args):
                 .all()
             )
             followee_user_ids = [f[0] for f in followee_user_ids]
+
+        dsl = [
+            {"index": "reposts"},
+            {"query": {"terms": {"user_id": followee_user_ids}}},
+            {"index": "tracks"},
+            {"query": {"terms": {"owner_id": followee_user_ids}}},
+            {"index": "playlists"},
+            {"query": {"terms": {"playlist_owner_id": followee_user_ids}}},
+        ]
+        mfound = es.msearch(searches=dsl)
+        [repost_found] = mfound["responses"]
+        return {"hits": repost_found["hits"]["hits"]}
 
         # Fetch followee creations if requested
         if feed_filter in ["original", "all"]:
