@@ -31,11 +31,10 @@ module.exports = {
       updatedAt: {
         allowNull: false,
         type: Sequelize.DATE
-      }.then(() =>
-        queryInterface.addIndex('FingerprintUserIds', ['userId'])
-      ).then(() => {
-        queryInterface.addIndex('FingerprintVisitorIds', ['visitorId'])
-      })
+      } }, {}).then(() =>
+      queryInterface.addIndex('FingerprintUserIds', ['userId'])
+    ).then(() => {
+      queryInterface.addIndex('FingerprintVisitorIds', ['visitorId'])
     })
   },
 
