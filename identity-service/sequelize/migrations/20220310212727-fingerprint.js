@@ -11,18 +11,15 @@ module.exports = {
       },
       userId: {
         type: Sequelize.INTEGER,
-        allowNull: false,
-        defaultValue: false
+        allowNull: false
       },
       visitorId: {
         type: Sequelize.STRING,
-        allowNull: false,
-        defaultValue: false
+        allowNull: false
       },
       origin: {
         type: Sequelize.ENUM('web', 'mobile', 'desktop'),
-        allowNull: false,
-        defaultValue: false
+        allowNull: false
       },
       createdAt: {
         allowNull: false,
@@ -32,15 +29,15 @@ module.exports = {
         allowNull: false,
         type: Sequelize.DATE
       } }, {}).then(() =>
-      queryInterface.addIndex('FingerprintUserIds', ['userId'])
+      queryInterface.addIndex('Fingerprints', ['userId'])
     ).then(() => {
-      queryInterface.addIndex('FingerprintVisitorIds', ['visitorId'])
+      queryInterface.addIndex('Fingerprints', ['visitorId'])
     })
   },
 
   down: (queryInterface, Sequelize) => {
-    return queryInterface.removeIndex('FingerprintUserIds', ['userId'])
-      .then(() => queryInterface.removeIndex('FingerprintVisitorIds', ['visitorId']))
+    return queryInterface.removeIndex('Fingerprints', ['userId'])
+      .then(() => queryInterface.removeIndex('Fingerprints', ['visitorId']))
       .then(() => queryInterface.dropTable('Fingerprints'))
   }
 }
