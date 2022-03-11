@@ -1,9 +1,30 @@
 const {
-  handleResponse, successResponse, errorResponseBadRequest
+  handleResponse, successResponse, errorResponseBadRequest, errorResponse
 } = require('../apiHelpers')
+const { QueryTypes } = require('sequelize')
+
 const models = require('../models')
 
 const { logger } = require('../logging')
+
+const getDeviceIDCountForUserId = async (userId) => {
+  const res = await models.sequelize.query(
+    `select count(*), "Fingerprints"."userId"
+     from "Fingerprints"
+     where "visitorId" in (
+      select distinct "visitorId"
+      from "Fingerprints"
+      where "userId" = :userId
+    ) group by "Fingerprints"."userId"`,
+    {
+      replacements: {
+        userId
+      },
+      type: QueryTypes.SELECT
+    }
+  )
+  return res.length
+}
 
 module.exports = function (app) {
   app.post('/fp/webhook', handleResponse(async (req) => {
@@ -31,31 +52,32 @@ module.exports = function (app) {
   }))
 
   app.get('/fp', handleResponse(async (req) => {
-    const { userId, origin, visitorId } = req.query
+    const { userId, origin } = req.query
+    if (!userId || !origin) return errorResponseBadRequest()
 
-    // TODO: add index on visitorId
-    if (visitorId) {
-      const count = (await models.Fingerprints.findAll({
-        where: {
-          visitorId
-        }
-      })).length
-      return successResponse({
-        count
-      })
-    } else if (userId) {
-      const query = {
-        userId
-      }
-      if (origin) {
-        query.origin = origin
-      }
-      const count = (await models.Fingerprints.findAll({
-        where: query
-      }))
-      return successResponse({ count })
+    const query = {
+      userId,
+      origin
     }
+    if (origin) {
+      query.origin = origin
+    }
+    const count = (await models.Fingerprints.findAll({
+      where: {
+        userId,
+        origin
+      }
+    })).length
+    return successResponse({ count })
+  }))
 
-    return errorResponseBadRequest()
+  app.get('/fp/counts/:userId', handleResponse(async (req) => {
+    const userId = req.params.userId
+    try {
+      const counts = await getDeviceIDCountForUserId(userId)
+      return successResponse({ counts })
+    } catch (e) {
+      return errorResponse(`Something went wrong fetching fp counts: ${JSON.stringify(e)}`)
+    }
   }))
 }
