@@ -700,6 +700,7 @@ export class RewardsAttester {
         whitelist: this.endpointPool.size > 0 ? this.endpointPool : null,
       }
     )
+    this.logger.info(`Nodes: ${endpoints}`)
     this.endpoints =
       await this.libs.Rewards.ServiceProvider.getUniquelyOwnedDiscoveryNodes(
         this.quorumSize,
