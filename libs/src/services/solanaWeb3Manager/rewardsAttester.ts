@@ -354,15 +354,21 @@ export class RewardsAttester {
       this.endpointPool = new Set(pool)
     }
     await this._selectDiscoveryNodes()
+    this.logger.info('1')
     await this.delayCalculator.start()
+    this.logger.info('2')
 
     while (!this._shouldStop) {
       try {
+        this.logger.info('3')
         await this._awaitFeePayerBalance()
+        this.logger.info('4')
         await this._checkForStartingBlockOverride()
+        this.logger.info('5')
 
         // Refill queue if necessary, returning early if error
         const { error } = await this._refillQueueIfNecessary()
+        this.logger.info('6')
         if (error) {
           this.logger.error(`Got error trying to refill challenges: [${error}]`)
           throw new Error(error)
