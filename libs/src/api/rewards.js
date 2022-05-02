@@ -138,7 +138,7 @@ class Rewards extends Base {
       logger.info(`submitAndEvaluate: submitting for challenge [${challengeId}], userId: [${decodeHashId(encodedUserId)}] with [${discoveryNodeAttestations.length}] DN and [${aaoAttestation ? 1 : 0}] oracle attestations.`)
       const fullTokenAmount = new BN(amount * WRAPPED_AUDIO_PRECISION)
       phase = AttestationPhases.SUBMIT_ATTESTATIONS
-      const { errorCode: submitErrorCode, error: submitError } = await this.solanaWeb3Manager.submitChallengeAttestations({
+      const [{ errorCode: submitErrorCode, error: submitError }, allResults] = await this.solanaWeb3Manager.submitChallengeAttestations({
         attestations: discoveryNodeAttestations,
         oracleAttestation: aaoAttestation,
         challengeId,
@@ -153,31 +153,38 @@ class Rewards extends Base {
       // In the case of an unparseable error,
       // we'll only have the error, not the code.
       if (submitErrorCode || submitError) {
-        const shouldRetryInSeperateTransactions = (
-          submitErrorCode === RewardsManagerError.REPEATED_SENDERS ||
-          submitErrorCode === RewardsManagerError.SIGN_COLLISION ||
-          submitErrorCode === RewardsManagerError.OPERATOR_COLLISION
-        )
-        // If we have sender collisions, we should
-        // submit one attestation per transaction and try to get
-        // into a good state.
-        // TODO: in the case this retry fails, we still proceed
-        // to evaluate phase and will error there (not ideal)
-        if (shouldRetryInSeperateTransactions) {
-          logger.warn(`submitAndEvaluate: saw repeat senders for userId [${decodeHashId(encodedUserId)}] challengeId: [${challengeId}] with err: ${submitErrorCode}, breaking up into individual transactions`)
-          await this.solanaWeb3Manager.submitChallengeAttestations({
-            attestations: discoveryNodeAttestations,
-            oracleAttestation: aaoAttestation,
-            challengeId,
-            specifier,
-            recipientEthAddress,
-            tokenAmount: fullTokenAmount,
-            instructionsPerTransaction: 2, // SECP + Attestation
-            logger,
-            feePayerOverride
-          })
+        // Check for degenerate staet: each result was RepeatedSenders
+        const allRepeatSenders = allResults.every(r => r?.errorCode === RewardsManagerError.REPEATED_SENDERS)
+        if (allRepeatSenders) {
+          // Do nothing
+          logger.warn('Saw all repeat sender error, going to evaluate')
         } else {
-          throw new Error(submitErrorCode || submitError)
+          const shouldRetryInSeperateTransactions = (
+            submitErrorCode === RewardsManagerError.REPEATED_SENDERS ||
+            submitErrorCode === RewardsManagerError.SIGN_COLLISION ||
+            submitErrorCode === RewardsManagerError.OPERATOR_COLLISION
+          )
+          // If we have sender collisions, we should
+          // submit one attestation per transaction and try to get
+          // into a good state.
+          // TODO: in the case this retry fails, we still proceed
+          // to evaluate phase and will error there (not ideal)
+          if (shouldRetryInSeperateTransactions) {
+            logger.warn(`submitAndEvaluate: saw repeat senders for userId [${decodeHashId(encodedUserId)}] challengeId: [${challengeId}] with err: ${submitErrorCode}, breaking up into individual transactions`)
+            await this.solanaWeb3Manager.submitChallengeAttestations({
+              attestations: discoveryNodeAttestations,
+              oracleAttestation: aaoAttestation,
+              challengeId,
+              specifier,
+              recipientEthAddress,
+              tokenAmount: fullTokenAmount,
+              instructionsPerTransaction: 2, // SECP + Attestation
+              logger,
+              feePayerOverride
+            })
+          } else {
+            throw new Error(submitErrorCode || submitError)
+          }
         }
       }
 

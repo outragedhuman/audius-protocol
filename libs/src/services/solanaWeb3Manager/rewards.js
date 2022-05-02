@@ -271,10 +271,10 @@ async function submitAttestations ({
   // If there's any error in any of the transactions, just return that one
   for (const res of results) {
     if (res.error || res.errorCode) {
-      return res
+      return [res, results]
     }
   }
-  return results[0]
+  return [results[0], results]
 }
 
 /**
