@@ -70,6 +70,9 @@ class TrackTranscodeHandoffManager {
     const libs = req.libs
     let resp = {}
 
+    logger.warn('hardcoded return empty object')
+    return resp
+
     let sps
     try {
       decisionTree.state = HAND_OFF_STATES.SELECTING_RANDOM_SPS
