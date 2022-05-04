@@ -67,6 +67,7 @@
       "mkdir -p ~/.audius; docker cp solana:/solana-program-config.json ~/.audius",
       "docker cp solana:/solana-program-config.json $PROTOCOL_DIR/solana-programs",
       "docker cp solana:/solana-program-config.json $PROTOCOL_DIR/identity-service",
+      "docker cp solana:/solana-program-config.json $PROTOCOL_DIR/solana-programs",
       "mkdir -p $PROTOCOL_DIR/discovery-provider/idl/; docker cp solana:/audius-data/target/idl/audius_data.json $PROTOCOL_DIR/discovery-provider/idl/audius_data.json"
     ],
     "down": [
