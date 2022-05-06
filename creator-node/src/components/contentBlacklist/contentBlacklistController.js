@@ -1,6 +1,7 @@
 const express = require('express')
 
 const {
+  checkContentBlacklist,
   getAllContentBlacklist,
   addToContentBlacklist,
   removeFromContentBlacklist
@@ -23,6 +24,10 @@ const types = models.ContentBlacklist.Types
 const TYPES_SET = new Set([types.cid, types.user, types.track])
 
 // Controllers
+
+const checkContentBlacklistController = async (req) => {
+  return successResponse({})
+}
 
 const contentBlacklistGetAllController = async (req) => {
   const blacklistedContent = await getAllContentBlacklist()
@@ -264,8 +269,8 @@ const filterNonexistantIds = async (libs, type, ids) => {
 }
 
 // Routes
-
-router.get('/blacklist', handleResponse(contentBlacklistGetAllController))
+router.get('/blacklist', handleResponse(checkContentBlacklistController))
+router.get('/blacklist/all', handleResponse(contentBlacklistGetAllController))
 router.post('/blacklist/add', handleResponse(contentBlacklistAddController))
 router.post(
   '/blacklist/remove',
