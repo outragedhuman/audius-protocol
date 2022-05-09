@@ -48,8 +48,8 @@ def reaction_dict_to_model(reaction: ReactionResponse) -> Union[Reaction, None]:
             slot=reaction["slot"],
             reaction=reaction["reaction"],
             sender_wallet=reaction["senderWallet"],
-            entity_type=reaction["entityType"],
-            entity_id=reaction["entityId"],
+            reaction_type=reaction["entityType"],
+            reacted_to=reaction["entityId"],
             timestamp=cast(datetime, reaction["createdAt"]),
             tx_signature=None,  # no tx_signature for now
         )
