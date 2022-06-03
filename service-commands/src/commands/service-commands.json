@@ -192,7 +192,10 @@
       "cd libs/; npm run init-local configure-discprov-wallet #",
       "cd discovery-provider; [ ! -e celerybeat.pid ] || rm celerybeat.pid",
       "cd discovery-provider; rm -f *_dump",
-      "cd discovery-provider; . compose/env/tmp/shellEnv#.sh; docker-compose -f compose/docker-compose.db.yml -f compose/docker-compose.redis.yml -f compose/docker-compose.backend.yml -f compose/docker-compose.ipfs.yml up --build -d",
+      "cd discovery-provider/es-indexer; mv node_modules /tmp/dn-node_modules",
+      "cd discovery-provider; . compose/env/tmp/shellEnv#.sh; time docker-compose -f compose/docker-compose.db.yml -f compose/docker-compose.redis.yml -f compose/docker-compose.backend.yml -f compose/docker-compose.ipfs.yml build --parallel",
+      "cd discovery-provider/es-indexer; rm -rf node_modules; mv /tmp/dn-node_modules node_modules",
+      "cd discovery-provider; . compose/env/tmp/shellEnv#.sh; time docker-compose -f compose/docker-compose.db.yml -f compose/docker-compose.redis.yml -f compose/docker-compose.backend.yml -f compose/docker-compose.ipfs.yml up -d",
       "cd discovery-provider; . compose/env/unsetShellEnv.sh",
       "echo 'Waiting 5 seconds...'",
       "sleep 5"
@@ -200,7 +203,10 @@
     "up-web-server": [
       "cd libs/initScripts; node configureLocalDiscProv.js",
       "cd libs/; npm run init-local configure-discprov-wallet #",
-      "cd discovery-provider; . compose/env/tmp/shellEnv#.sh; docker-compose -f compose/docker-compose.redis.yml -f compose/docker-compose.web-server.yml -f compose/docker-compose.ipfs.yml up --build -d",
+      "cd discovery-provider/es-indexer; mv node_modules /tmp/dn-node_modules",
+      "cd discovery-provider; . compose/env/tmp/shellEnv#.sh; time docker-compose -f compose/docker-compose.redis.yml -f compose/docker-compose.web-server.yml -f compose/docker-compose.ipfs.yml build --parallel",
+      "cd discovery-provider/es-indexer; rm -rf node_modules; mv /tmp/dn-node_modules node_modules",
+      "cd discovery-provider; . compose/env/tmp/shellEnv#.sh; time docker-compose -f compose/docker-compose.redis.yml -f compose/docker-compose.web-server.yml -f compose/docker-compose.ipfs.yml up -d",
       "echo 'Waiting 5 seconds...'",
       "sleep 5"
     ],
@@ -231,7 +237,10 @@
       "cd libs/initScripts; node configureLocalDiscProv.js",
       "cd discovery-provider; rm -f *_dump",
       "cd discovery-provider; [ ! -e celerybeat.pid ] || rm celerybeat.pid",
-      "cd discovery-provider; . compose/env/tmp/shellEnv#.sh; docker-compose -f compose/docker-compose.db.yml -f compose/docker-compose.redis.yml -f compose/docker-compose.backend.yml -f compose/docker-compose.ipfs.yml up --build -d",
+      "cd discovery-provider/es-indexer; mv node_modules /tmp/dn-node_modules",
+      "cd discovery-provider; . compose/env/tmp/shellEnv#.sh; time docker-compose -f compose/docker-compose.db.yml -f compose/docker-compose.redis.yml -f compose/docker-compose.backend.yml -f compose/docker-compose.ipfs.yml build --parallel",
+      "cd discovery-provider/es-indexer; rm -rf node_modules; mv /tmp/dn-node_modules node_modules",
+      "cd discovery-provider; . compose/env/tmp/shellEnv#.sh; time docker-compose -f compose/docker-compose.db.yml -f compose/docker-compose.redis.yml -f compose/docker-compose.backend.yml -f compose/docker-compose.ipfs.yml up -d",
       "cd discovery-provider; . compose/env/unsetShellEnv.sh",
       "echo 'Waiting 5 seconds...'",
       "sleep 5"
@@ -243,18 +252,13 @@
     "port": 4000,
     "health_check_endpoint": "health_check",
     "up": [
-      "cd creator-node; mkdir -p compose/env/tmp/file-storage-#; . compose/env/tmp/shellEnv#.sh; docker-compose -f compose/docker-compose.yml up --build -d",
-      "cd creator-node; . compose/env/unsetShellEnv.sh"
+      "${PROTOCOL_DIR}/creator-node/scripts/up.sh #"
     ],
     "down": [
       "cd creator-node; . compose/env/tmp/shellEnv#.sh; rm -rf compose/env/tmp/file-storage-#; docker-compose -f compose/docker-compose.yml down --remove-orphans"
     ],
     "restart": [
-      "cd creator-node; . compose/env/unsetShellEnv.sh",
-      "cd creator-node; . compose/env/tmp/shellEnv#.sh; docker-compose -f compose/docker-compose.yml down --remove-orphans",
-      "cd libs/; npm run init-local update-cnode-config #",
-      "cd creator-node; . compose/env/tmp/shellEnv#.sh; docker-compose -f compose/docker-compose.yml up --build -d",
-      "cd creator-node; . compose/env/unsetShellEnv.sh"
+      "${PROTOCOL_DIR}/creator-node/scripts/restart.sh #"
     ],
     "register": [
       "cd libs/; npm run init-local register-cnode #"
