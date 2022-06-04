@@ -22,7 +22,7 @@ docker-compose -f compose/docker-compose.yml down --remove-orphans
 mv node_modules /tmp/cn-node_modules
 time docker build --progress=plain .
 time docker-compose -f compose/docker-compose.yml build
-[ -d node_modules ] && mv node_modules/* /tmp/cn-node_modules/
+[ -d node_modules ] && mv node_modules/* /tmp/cn-node_modules/ || true
 rm -rf node_modules
 mv /tmp/cn-node_modules node_modules
 
