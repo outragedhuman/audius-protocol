@@ -12,10 +12,10 @@ mkdir -p compose/env/tmp/file-storage-${1}
 
 # build docker image without node_modules
 mv node_modules /tmp/cn-node_modules
-time docker build --progress=tty .
+time docker build --progress=plain .
 time docker-compose -f compose/docker-compose.yml build
-# mv node_modules/* /tmp/cn-node_modules/
-# rm -rf node_modules
+[ -d node_modules ] && mv node_modules/* /tmp/cn-node_modules/
+rm -rf node_modules
 mv /tmp/cn-node_modules node_modules
 
 mkdir -p compose/env/tmp/file-storage-${1}
