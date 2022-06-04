@@ -2,7 +2,7 @@
 
 set -xe
 
-# hide docker build output
+# show docker build output
 export DOCKER_BUILDKIT=1
 
 cd ${PROTOCOL_DIR}/creator-node
