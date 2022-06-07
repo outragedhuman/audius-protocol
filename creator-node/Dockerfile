@@ -50,9 +50,7 @@ RUN echo 'http://mirror.leaseweb.com/alpine/v3.13/community' \
     mkdir /usr/local/openresty/logs && \
     mkdir /usr/local/openresty/cache
 
-# TODO: TEST * SYNTAX
 COPY nginx_conf /usr/local/openresty/conf/
-# RUN cp nginx_conf/* /usr/local/openresty/conf/
 
 # Create a db user if postgres in case it will be run inside this container
 COPY scripts/init-db.sh scripts/init-db.sh

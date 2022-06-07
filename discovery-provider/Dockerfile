@@ -67,35 +67,33 @@ RUN echo 'http://mirror.leaseweb.com/alpine/v3.13/community' \
     mkdir /usr/local/openresty/conf && \
     mkdir /usr/local/openresty/logs
 
-# TODO: TEST * SYNTAX
 COPY nginx_conf /usr/local/openresty/conf/
-# RUN cp nginx_conf/* /usr/local/openresty/conf/
 
-# COPY scripts/init-db.sh scripts/init-db.sh
-# RUN bash scripts/init-db.sh
+COPY scripts/init-db.sh scripts/init-db.sh
+RUN bash scripts/init-db.sh
 
-# # Upgrade pip first to accomodate anchor.py installation
-# COPY requirements.txt requirements.txt
-# RUN python3 -m pip install --upgrade pip && \
-#     python3 -m pip install -r requirements.txt --no-cache-dir && \
-#     apk --purge del .build-deps
+# Upgrade pip first to accomodate anchor.py installation
+COPY requirements.txt requirements.txt
+RUN python3 -m pip install --upgrade pip && \
+    python3 -m pip install -r requirements.txt --no-cache-dir && \
+    apk --purge del .build-deps
 
-# COPY . .
+COPY . .
 
-# # Permission scripts directory
-# RUN chmod +x scripts/*
+# Permission scripts directory
+RUN chmod +x scripts/*
 
-# # RUN mkdir -p build/contracts
-# COPY --from=contracts /usr/src/app/build/contracts/ build/contracts/
+# RUN mkdir -p build/contracts
+COPY --from=contracts /usr/src/app/build/contracts/ build/contracts/
 
-# ARG git_sha
-# ARG audius_loggly_disable
-# ARG audius_loggly_token
-# ARG audius_loggly_tags
+ARG git_sha
+ARG audius_loggly_disable
+ARG audius_loggly_token
+ARG audius_loggly_tags
 
-# ENV GIT_SHA=$git_sha
-# ENV audius_loggly_disable=$audius_loggly_disable
-# ENV audius_loggly_token=$audius_loggly_token
-# ENV audius_loggly_tags=$audius_loggly_tags
+ENV GIT_SHA=$git_sha
+ENV audius_loggly_disable=$audius_loggly_disable
+ENV audius_loggly_token=$audius_loggly_token
+ENV audius_loggly_tags=$audius_loggly_tags
 
-# CMD ["bash", "scripts/start.sh"]
+CMD ["bash", "scripts/start.sh"]
