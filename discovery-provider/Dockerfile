@@ -44,7 +44,8 @@ RUN echo 'http://dl-cdn.alpinelinux.org/alpine/v3.10/main' \
         python3=3.9.7-r4 \
         redis=6.2.7-r0 \
         rsyslog \
-        sudo=1.9.8_p2-r1 \
+        sudo=1.9.8_p2-r1 && \
+    apk add \
         --virtual .build-deps \
             gcc \
             musl-dev \
