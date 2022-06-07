@@ -73,10 +73,10 @@ COPY scripts/init-db.sh scripts/init-db.sh
 RUN bash scripts/init-db.sh
 
 # Upgrade pip first to accomodate anchor.py installation
-COPY requirements.txt requirements.txt
 RUN python3 -m pip install --upgrade pip && \
-    python3 -m pip install -r requirements.txt --no-cache-dir && \
     apk --purge del .build-deps
+COPY requirements.txt requirements.txt
+RUN python3 -m pip install -r requirements.txt --no-cache-dir
 
 COPY . .
 
