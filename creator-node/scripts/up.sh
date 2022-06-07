@@ -3,7 +3,7 @@
 set -xe
 
 # show docker build output
-export DOCKER_BUILDKIT=1
+export DOCKER_BUILDKIT=0
 
 cd ${PROTOCOL_DIR}/creator-node
 
