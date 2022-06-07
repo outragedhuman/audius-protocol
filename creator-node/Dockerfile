@@ -11,7 +11,6 @@ HEALTHCHECK --interval=5s --timeout=5s --start-period=5m --retries=12 \
 # Add the wait script to the image
 # Script originally from https://github.com/ufoscout/docker-compose-wait/releases/download/2.4.0/wait /usr/bin/wait
 COPY scripts/wait /usr/bin/wait
-RUN chmod +x /usr/bin/wait
 
 RUN echo 'http://dl-cdn.alpinelinux.org/alpine/v3.10/main' \
         >> /etc/apk/repositories && \
