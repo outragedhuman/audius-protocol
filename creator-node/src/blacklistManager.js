@@ -28,7 +28,7 @@ class BlacklistManager {
   static async init() {
     try {
       // Clear existing redis keys
-      await this.deleteRedisKeys()
+      // await this.deleteRedisKeys()
 
       // const { trackIdsToBlacklist, userIdsToBlacklist, segmentsToBlacklist } =
       //   await this.getDataToBlacklist()
