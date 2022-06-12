@@ -63,7 +63,7 @@ class ServiceRegistry {
    * Configure all services
    */
   async initServices() {
-    await this.blacklistManager.init()
+    this.blacklistManager.init()
 
     // init libs
     this.libs = await this._initAudiusLibs()
