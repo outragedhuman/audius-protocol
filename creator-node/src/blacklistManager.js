@@ -30,13 +30,13 @@ class BlacklistManager {
       // Clear existing redis keys
       await this.deleteRedisKeys()
 
-      const { trackIdsToBlacklist, userIdsToBlacklist, segmentsToBlacklist } =
-        await this.getDataToBlacklist()
-      await this.fetchCIDsAndAddToRedis({
-        trackIdsToBlacklist,
-        userIdsToBlacklist,
-        segmentsToBlacklist
-      })
+      // const { trackIdsToBlacklist, userIdsToBlacklist, segmentsToBlacklist } =
+      //   await this.getDataToBlacklist()
+      // await this.fetchCIDsAndAddToRedis({
+      //   trackIdsToBlacklist,
+      //   userIdsToBlacklist,
+      //   segmentsToBlacklist
+      // })
       this.initialized = true
     } catch (e) {
       throw new Error(`BLACKLIST ERROR ${e}`)
