@@ -55,11 +55,6 @@ type AttestationResult = {
   reason?: string
 }
 
-type Reaction = {
-  reactedTo: string
-  reactionValue: number
-}
-
 // Only probabilistically capture 50% of relay captchas
 const RELAY_CAPTCHA_SAMPLE_RATE = 0.5
 
@@ -504,20 +499,6 @@ export class IdentityService {
       url: '/rewards/attestation_result',
       method: 'post',
       data
-    })
-  }
-
-  /**
-   * Post a reaction to identity.
-   */
-  async submitReaction(data: Reaction) {
-    const headers = await this._signData()
-
-    return await this._makeRequest({
-      url: '/reactions',
-      method: 'post',
-      data,
-      headers
     })
   }
 

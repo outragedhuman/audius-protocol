@@ -33,8 +33,6 @@ const { PublicKey } = require('@solana/web3.js')
 const {
   RewardsAttester
 } = require('./services/solanaWeb3Manager/rewardsAttester')
-const { Reactions } = require('./api/reactions')
-
 class AudiusLibs {
   /**
    * Configures an identity service wrapper
@@ -358,7 +356,6 @@ class AudiusLibs {
     this.Playlist = null
     this.File = null
     this.Rewards = null
-    this.Reactions = null
 
     this.preferHigherPatchForPrimary = preferHigherPatchForPrimary
     this.preferHigherPatchForSecondaries = preferHigherPatchForSecondaries
@@ -556,7 +553,6 @@ class AudiusLibs {
     this.Playlist = new Playlist(...services)
     this.File = new File(this.User, ...services)
     this.Rewards = new Rewards(this.ServiceProvider, ...services)
-    this.Reactions = new Reactions(...services)
   }
 }
 
