@@ -5,18 +5,16 @@ const fs = require('fs');
 const dotenv = require('dotenv');
 const AudiusLibs = require("@audius/libs");
 
-const ENVS = ["stage", "prod"]
 
-
-const yaml = (url, env) => {
+const generatePrometheusYaml = (url, env, scheme = 'https', component = 'discover-provider') => {
   url = url.replace("https://", "");
   url = url.replace("http://", "");
 
-  sanatized_url = url.split(".").join("-")
+  sanitizedUrl = url.split(".").join("-")
 
   return `
-  - job_name: '${sanatized_url}'
-    scheme: https
+  - job_name: '${sanitizedUrl}'
+    scheme: '${scheme}'
     metrics_path: '/prometheus_metrics'
     static_configs:
       - targets: ['${url}']
@@ -24,14 +22,16 @@ const yaml = (url, env) => {
           host: '${url}'
           environment: '${env}'
           service: 'audius'
-          component: 'discover-provider'`
+          component: '${component}'
+`
 }
 
 const main = async () => {
 
   const stream = fs.createWriteStream('prometheus.yml', { flags: 'a' });
 
-  stream.write(`global:
+  stream.write(`
+global:
   scrape_interval:     30s
   evaluation_interval: 15s
   # scrape_timeout is set to the global default (10s).
@@ -42,8 +42,11 @@ scrape_configs:
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
+  `)
 
- # monitor docker-compose local setups
+  if (process.env.PROM_ENV === "local") {
+    stream.write(`
+  # monitor docker-compose local setups
 
   - job_name: 'local-discovery-provider'
     metrics_path: '/prometheus_metrics'
@@ -51,9 +54,11 @@ scrape_configs:
       - targets: ['host.docker.internal:5000']
         labels:
           host: 'host.docker.internal'
-          environment: 'remote-dev'
+          environment: '${process.env.PROM_ENV}'
           service: 'audius'
           component: 'discover-provider'
+
+  # monitor load tests locally
 
   - job_name: 'load-test-populate'
     metrics_path: '/metrics'
@@ -65,72 +70,11 @@ scrape_configs:
           service: 'audius'
           component: 'discover-provider'
           job: 'populate'
+    `)
 
-  - job_name: 'load-test-census-stage'
-    metrics_path: '/metrics'
-    static_configs:
-      - targets: ['host.docker.internal:8001']
-        labels:
-          host: 'host.docker.internal'
-          environment: 'stage'
-          service: 'audius'
-          component: 'discover-provider'
-          job: 'census'
-
-  - job_name: 'load-test-census-prod'
-    metrics_path: '/metrics'
-    scrape_interval: 30m
-    static_configs:
-      - targets: ['host.docker.internal:8002']
-        labels:
-          host: 'host.docker.internal'
-          environment: 'prod'
-          service: 'audius'
-          component: 'discover-provider'
-          job: 'census'
-
-  # monitor canary nodes
-
-  - job_name: 'discoveryprovider4-audius-co'
-    scheme: https
-    metrics_path: '/prometheus_metrics'
-    static_configs:
-      - targets: ['discoveryprovider4.audius.co']
-        labels:
-          host: 'discoveryprovider4.audius.co'
-          environment: 'prod'
-          service: 'audius'
-          component: 'discover-provider'
-`)
-
-  for (const env of ENVS) {
-    dotenv.config({ path: `.env.${env}`, override: true });
-
-    const ETH_REGISTRY_ADDRESS = process.env.REACT_APP_ETH_REGISTRY_ADDRESS
-    const ETH_TOKEN_ADDRESS = process.env.REACT_APP_ETH_TOKEN_ADDRESS
-    const ETH_OWNER_WALLET = process.env.REACT_APP_ETH_OWNER_WALLET
-    const ETH_PROVIDER_URL = process.env.REACT_APP_ETH_PROVIDER_URL
-
-    const ethWeb3Config = AudiusLibs.configEthWeb3(
-      ETH_TOKEN_ADDRESS,
-      ETH_REGISTRY_ADDRESS,
-      ETH_PROVIDER_URL,
-      ETH_OWNER_WALLET
-    )
-
-    const audiusLibs = new AudiusLibs({
-      ethWeb3Config,
-      isServer: true,
-      enableUserReplicaSetManagerContract: true,
-      preferHigherPatchForPrimary: true,
-      preferHigherPatchForSecondaries: true
-    })
-    await audiusLibs.init()
-    const serviceProviders = await audiusLibs.ethContracts.ServiceProviderFactoryClient.getServiceProviderList('discovery-node');
-
-    for (const sp of serviceProviders) {
-      const spEndpoint = sp.endpoint;
-      const yamlString = yaml(spEndpoint, env)
+    const localCNs = ['host.docker.internal:4000', 'host.docker.internal:4001', 'host.docker.internal:4002', 'host.docker.internal:4003']
+    for (const localCN of localCNs) {
+      const yamlString = generatePrometheusYaml(localCN, process.env.PROM_ENV, 'http', 'content-node')
       stream.write(yamlString);
       stream.write("\n")
     }
