@@ -124,14 +124,14 @@ jobs:
           name: Test mad-dog on GCP
           command: |
             # cleanup code setup before starting actual execution
-            cleanup() {
-              # Delete GCP box
-              gcloud compute instances delete $GCLOUD_VM_NAME --quiet
+            # cleanup() {
+            #   # Delete GCP box
+            #   gcloud compute instances delete $GCLOUD_VM_NAME --quiet
 
-              # Delete GCP firewall
-              gcloud compute firewall-rules delete $GCLOUD_VM_NAME --quiet
-            }
-            trap cleanup EXIT
+            #   # Delete GCP firewall
+            #   gcloud compute firewall-rules delete $GCLOUD_VM_NAME --quiet
+            # }
+            # trap cleanup EXIT
 
             # authenticate into gcloud
             echo $GCLOUD_SERVICE_KEY | gcloud auth activate-service-account $GCLOUD_SERVICE_ACCOUNT_EMAIL --key-file=-
