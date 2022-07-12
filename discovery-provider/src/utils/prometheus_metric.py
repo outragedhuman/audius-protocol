@@ -68,27 +68,36 @@ METRIC_PREFIX = "audius_dn"
 
 class PrometheusMetricNames:
     """
-    Attempt to group metrics with high_level prefixes like:
+    Anatomy of a name (? means optional)
+    (group)_(name)_(status)_(duration?)_(unit)_(total?)
+
+    Group - Attempt to group metrics with high_level prefixes like:
     * `flask_`
     * `celery_task_`
+    * `index_`
 
-    Antepenultimate Suffixes:
-    * `_active` when measuring runtimes of actively running processes that are yet to be
+    Name - describe the metric you're trying to capture like:
+    * `_track_is_available_`
+    * `_trending_`
+
+    Status - state of metric
+    * `_active_` when measuring runtimes of actively running processes that are yet to be
       completed
-    * `_last` when the last completed runtime is needed (duration in seconds)
+    * `_last_` when the last completed runtime is needed (duration in seconds)
     * (default: do not use) `_completed` is always implied if the other two are missing.
       Used when measuring runtimes of completed processes.
 
-    Penultimate Suffixes:
-    * `_duration` when measuring task duration or runtimes
+    Duration (optional) - usually combined with Status, but can also be standalone
+    * `_duration_` can be added when measuring task duration or runtimes eg `celery_task_last_duration_seconds`
+    * `_active_duration_` can be standalone without a status eg `celery_task_duration_seconds`
 
-    Suffixes:
-    * `_seconds` always the base unit (never microseconds, milliseconds, etc)
-    * `_latest` when looking at a snapshot of unit-less data
-    * `_info` for a pseudo-metric that provides metadata about the running binary
+    Unit - what are you trying to measure
+    * `_seconds_` always the base unit (never microseconds, milliseconds, etc)
+    * `_latest_` when looking at a snapshot of unit-less data
+    * `_info_` for a pseudo-metric that provides metadata about the running binary
 
-    Ultimate Suffixes:
-    * `_total`, when accumulating a count, in addition to above suffixes if applicable
+    Total (optional) - if metric is a sum
+    * `_total`, when accumulating a count, in addition to above if applicable
 
     See the following resources for related information:
     * [Creator Node's docs](https://github.com/AudiusProject/audius-protocol/blob/master/creator-node/src/services/prometheusMonitoring/README.md)
