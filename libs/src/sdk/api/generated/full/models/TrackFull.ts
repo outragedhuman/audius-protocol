@@ -172,6 +172,12 @@ export interface TrackFull {
     permalink?: string;
     /**
      * 
+     * @type {string}
+     * @memberof TrackFull
+     */
+    newField?: string;
+    /**
+     * 
      * @type {number}
      * @memberof TrackFull
      */

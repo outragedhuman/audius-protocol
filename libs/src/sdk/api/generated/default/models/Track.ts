@@ -134,5 +134,11 @@ export interface Track {
      * @memberof Track
      */
     permalink?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof Track
+     */
+    newField?: string;
 }
 
