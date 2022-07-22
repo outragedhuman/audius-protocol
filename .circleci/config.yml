@@ -202,8 +202,8 @@ jobs:
           password: $DOCKERHUB_PASS
     steps:
       - checkout
-      - diff-if-necessary:
-          service: discovery-provider
+      # - diff-if-necessary:
+      #     service: discovery-provider
       - run:
           name: Verify generated sdk types
           command: |
