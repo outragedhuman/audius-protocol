@@ -217,14 +217,9 @@ jobs:
             A up -nc 0
             cd libs
             npm run gen:dev
-            cd libs/src/sdk/api/generated
+            cd src/sdk/api/generated
             # Check if there are any changes generated
-            if [ -z "$(git status . --porcelain)" ]; then 
-              echo "No diff found between generated types and checked in types";
-            else
-              echo "Found diff between generated types and checked in types, please 'npm run gen:dev' in libs"
-              exit 1;
-            fi
+            if [ -z "$(git status . --porcelain)" ]; then echo "No diff found between generated types and checked in types"; else echo "Found diff between generated types and checked in types, please 'npm run gen:dev' in libs" && exit 1; fi
 
   test-libs:
     docker:
