@@ -201,6 +201,7 @@ jobs:
           username: $DOCKERHUB_USERNAME
           password: $DOCKERHUB_PASS
     steps:
+      - checkout
       - diff-if-necessary:
           service: discovery-provider
       - run-on-gcp:
