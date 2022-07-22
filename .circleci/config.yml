@@ -209,8 +209,9 @@ jobs:
           command: |
             sudo apt update
             sudo apt install -y default-jre
-            SKIP_TESTS=true ./discovery-provider/scripts/test.sh
-            cd libs
+            cd discovery-provider
+            SKIP_TESTS=true ./scripts/test.sh
+            cd ../libs
             # Check if there are any changes generated
             ./scripts/verify-types.sh
 
