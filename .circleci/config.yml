@@ -204,17 +204,12 @@ jobs:
       - checkout
       - diff-if-necessary:
           service: discovery-provider
-      - run-on-gcp:
-          command-name: Verify generated sdk types
-          instance-name: test-sdk
-          interactive-command: |
+      - run:
+          name: Verify generated sdk types
+          command: |
             sudo apt update
             sudo apt install -y default-jre
-          command: |
-            cd /home/ubuntu/audius-protocol
-            git pull
-            git checkout $CIRCLE_BRANCH
-            A up -nc 0
+            SKIP_TESTS=true ./discovery-provider/scripts/test.sh
             cd libs
             # Check if there are any changes generated
             ./scripts/verify-types.sh
