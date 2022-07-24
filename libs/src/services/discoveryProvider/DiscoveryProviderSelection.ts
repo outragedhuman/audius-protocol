@@ -62,12 +62,33 @@ export class DiscoveryProviderSelection extends ServiceSelection {
        * the list of registered providers from chain
        */
       getServices: async ({ verbose = false } = {}) => {
-        this.currentVersion = await ethContracts.getCurrentVersion(
-          DISCOVERY_SERVICE_NAME
-        )
-        const services = await this.ethContracts.getServiceProviderList(
-          DISCOVERY_SERVICE_NAME
-        )
+        this.currentVersion = '0.3.61'
+        const services: any = [
+          {
+            owner: '0xc1f351FE81dFAcB3541e59177AC71Ed237BD15D0',
+            endpoint: 'https://audius-metadata-1.figment.io',
+            spID: 2,
+            type: 'discovery-node',
+            blockNumber: 11289136,
+            delegateOwnerWallet: '0x7db3789e5E2154569e802945ECF2cC92e0994841'
+          },
+          {
+            owner: '0xe5b256d302ea2f4e04B8F3bfD8695aDe147aB68d',
+            endpoint: 'https://discoveryprovider3.audius.co',
+            spID: 17,
+            type: 'discovery-node',
+            blockNumber: 11694582,
+            delegateOwnerWallet: '0xF2897993951d53a7E3eb2242D6A14D2028140DC8'
+          },
+          {
+            owner: '0x447E3572B5511cc6ea0700e34D2443017D081d7e',
+            endpoint: 'https://blockdaemon-audius-discovery-06.bdnodes.net',
+            spID: 60,
+            type: 'discovery-node',
+            blockNumber: 14322182,
+            delegateOwnerWallet: '0x7db3789e5E2154569e802945ECF2cC92e0994841'
+          }
+        ]
         return verbose ? services : services.map((e) => e.endpoint)
       },
       ...config

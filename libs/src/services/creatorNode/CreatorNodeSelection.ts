@@ -93,12 +93,33 @@ export class CreatorNodeSelection extends ServiceSelection {
   }: CreatorNodeSelectionConfig) {
     super({
       getServices: async () => {
-        this.currentVersion = await ethContracts.getCurrentVersion(
-          CREATOR_NODE_SERVICE_NAME
-        )
-        const services = await this.ethContracts.getServiceProviderList(
-          CREATOR_NODE_SERVICE_NAME
-        )
+        this.currentVersion = '0.3.61'
+        const services = [
+          {
+            owner: '0xe5b256d302ea2f4e04B8F3bfD8695aDe147aB68d',
+            endpoint: 'https://creatornode.audius.co',
+            spID: 1,
+            type: 'content-node',
+            blockNumber: 11273786,
+            delegateOwnerWallet: '0xc8d0C29B6d540295e8fc8ac72456F2f4D41088c8'
+          },
+          {
+            owner: '0xe5b256d302ea2f4e04B8F3bfD8695aDe147aB68d',
+            endpoint: 'https://creatornode2.audius.co',
+            spID: 2,
+            type: 'content-node',
+            blockNumber: 11273786,
+            delegateOwnerWallet: '0xf686647E3737d595C60c6DE2f5F90463542FE439'
+          },
+          {
+            owner: '0xe5b256d302ea2f4e04B8F3bfD8695aDe147aB68d',
+            endpoint: 'https://creatornode3.audius.co',
+            spID: 3,
+            type: 'content-node',
+            blockNumber: 11273900,
+            delegateOwnerWallet: '0x0C32BE6328578E99b6F06E0e7A6B385EB8FC13d1'
+          }
+        ]
         return services.map((e) => {
           setSpIDForEndpoint(e.endpoint, e.spID)
           return e.endpoint
