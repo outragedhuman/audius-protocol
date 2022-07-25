@@ -1,4 +1,4 @@
-npm run gen:dev
+npm run gen:ci
 cd src/sdk/api/generated
 
 if [ -z "$(git status . --porcelain)" ]; then 
