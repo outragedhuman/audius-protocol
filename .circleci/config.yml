@@ -221,6 +221,7 @@ jobs:
       - checkout
       # - diff-if-necessary:
       #     service: discovery-provider
+      - setup_remote_docker
       - run:
           name: Verify generated sdk types
           command: |
