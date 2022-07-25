@@ -197,6 +197,26 @@ jobs:
   test-sdk:
     docker:
       - image: cimg/python:3.9-node
+      # Discovery provider dependencies
+      - image: circleci/postgres:11.1
+        environment:
+          POSTGRES_USER: postgres
+          POSTGRES_DB: audius_discovery
+      - image: docker.elastic.co/elasticsearch/elasticsearch:8.1.0
+        environment:
+          network.host: '0.0.0.0'
+          discovery.type: 'single-node'
+          cluster.name: 'docker-cluster'
+          node.name: 'cluster1-node1'
+          xpack.security.enabled: 'false'
+          ES_JAVA_OPTS: '-Xms512m -Xmx512m'
+      - image: ipfs/go-ipfs:release
+        # Bring up ganache
+      - image: redis:3.0-alpine
+      - image: trufflesuite/ganache-cli:latest
+        command: ['--port=8555', '-a', '100', '-l', '8000000']
+      - image: trufflesuite/ganache-cli:latest
+        command: ['--port=8556', '-a', '100', '-l', '8000000']
     steps:
       - checkout
       # - diff-if-necessary:
