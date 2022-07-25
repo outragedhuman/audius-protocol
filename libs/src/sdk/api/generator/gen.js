@@ -41,7 +41,7 @@ const generate = ({ env, apiVersion, apiFlavor, generator }) => {
     // Hardcode a prod DN, it doesn't matter
     baseURL = 'https://discoveryprovider.audius.co'
   } else if (env === 'ci') {
-    baseURL = 'localhost:5000'
+    baseURL = 'http://localhost:5000'
   }
   const outputFolderName = apiFlavor === '' ? 'default' : apiFlavor
   const apiPath = apiFlavor === '' ? apiVersion : `${apiVersion}/${apiFlavor}`
