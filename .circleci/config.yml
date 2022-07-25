@@ -196,10 +196,7 @@ jobs:
 
   test-sdk:
     docker:
-      - image: audius/circleci-gcloud-bake:latest
-        auth:
-          username: $DOCKERHUB_USERNAME
-          password: $DOCKERHUB_PASS
+      - image: cimg/python:3.9-node
     steps:
       - checkout
       # - diff-if-necessary:
