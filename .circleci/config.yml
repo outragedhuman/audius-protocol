@@ -209,6 +209,7 @@ jobs:
             cd discovery-provider
             SKIP_TESTS=true ./scripts/test.sh
             cd ../libs
+            npm i
             # Check if there are any changes generated
             ./scripts/verify-types.sh
 
