@@ -39,10 +39,12 @@ async function processSupporterRankChangeNotification (notifications, tx) {
     ]
 
     // If this is a new top supporter, see who just became dethroned
+    console.log('dethrone: 1')
     if (rank === 1) {
       const supporters = await getSupporters(receiverUserId)
 
       const isSingleSupporter = supporters.length < 2
+
       if (!isSingleSupporter) {
         const topSupporterId = decodeHashId(supporters[0].sender.id)
         const dethronedUserId = decodeHashId(supporters[1].sender.id)
@@ -52,7 +54,9 @@ async function processSupporterRankChangeNotification (notifications, tx) {
         // Ensure that you don't get dethroned for a tie
         const isTie = topSupporterId === dethronedUserId
 
+        console.log('dethrone: isTie' + isTie + ' up to date ' + isDiscoveryUpToDate)
         if (isDiscoveryUpToDate && !isTie) {
+          console.log('dethrone: new notif')
           const dethronedNotif = models.SolanaNotification.findOrCreate({
             where: {
               slot,
