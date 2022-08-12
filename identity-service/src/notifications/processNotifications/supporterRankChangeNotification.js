@@ -7,6 +7,7 @@ const { decodeHashId, encodeHashId } = require('../utils')
 
 async function processSupporterRankChangeNotification (notifications, tx) {
   for (const notification of notifications) {
+    console.log('xyz: 0')
     const { slot, initiator: receiverUserId, metadata: { entity_id: senderUserId, rank } } = notification
 
     const promises = [
@@ -40,56 +41,60 @@ async function processSupporterRankChangeNotification (notifications, tx) {
 
     // If this is a new top supporter, see who just became dethroned
     console.log('xyz: 1')
-    if (rank === 1) {
-      const supporters = await getSupporters(receiverUserId)
+    try {
+      if (rank === 1) {
+        const supporters = await getSupporters(receiverUserId)
 
-      const isSingleSupporter = supporters.length < 2
+        const isSingleSupporter = supporters.length < 2
 
-      if (!isSingleSupporter) {
-        const topSupporterId = decodeHashId(supporters[0].sender.id)
-        const dethronedUserId = decodeHashId(supporters[1].sender.id)
+        if (!isSingleSupporter) {
+          const topSupporterId = decodeHashId(supporters[0].sender.id)
+          const dethronedUserId = decodeHashId(supporters[1].sender.id)
 
-        // Ensure that the top supporter on DN is the top supporter that caused this index
-        const isDiscoveryUpToDate = topSupporterId === senderUserId
-        // Ensure that you don't get dethroned for a tie
-        const isTie = topSupporterId === dethronedUserId
+          // Ensure that the top supporter on DN is the top supporter that caused this index
+          const isDiscoveryUpToDate = topSupporterId === senderUserId
+          // Ensure that you don't get dethroned for a tie
+          const isTie = topSupporterId === dethronedUserId
 
-        console.log('xyz: isTie' + isTie + ' up to date ' + isDiscoveryUpToDate)
-        if (isDiscoveryUpToDate && !isTie) {
-          console.log('xyz: new notif')
-          const dethronedNotif = models.SolanaNotification.findOrCreate({
-            where: {
+          console.log('xyz: isTie' + isTie + ' up to date ' + isDiscoveryUpToDate)
+          if (isDiscoveryUpToDate && !isTie) {
+            console.log('xyz: new notif')
+            const dethronedNotif = models.SolanaNotification.findOrCreate({
+              where: {
+                slot,
+                type: notificationTypes.SupporterDethroned,
+                userId: dethronedUserId, // Notif goes to the dethroned user
+                entityId: 2, // Rank 2
+                metadata: {
+                  supportedUserId: receiverUserId, // The user originally tipped
+                  newTopSupporterUserId: topSupporterId, // The usurping user
+                  oldAmount: supporters[1].amount,
+                  newAmount: supporters[0].amount
+                }
+              },
+              transaction: tx
+            })
+
+            // Create the notif model for the DB
+            promises.push(dethronedNotif)
+
+            // Create a fake notif from discovery for further processing down the pipeline
+            notifications.push({
               slot,
               type: notificationTypes.SupporterDethroned,
-              userId: dethronedUserId, // Notif goes to the dethroned user
-              entityId: 2, // Rank 2
+              initiator: dethronedUserId, // Notif goes to the dethroned user
               metadata: {
                 supportedUserId: receiverUserId, // The user originally tipped
                 newTopSupporterUserId: topSupporterId, // The usurping user
                 oldAmount: supporters[1].amount,
                 newAmount: supporters[0].amount
               }
-            },
-            transaction: tx
-          })
-
-          // Create the notif model for the DB
-          promises.push(dethronedNotif)
-
-          // Create a fake notif from discovery for further processing down the pipeline
-          notifications.push({
-            slot,
-            type: notificationTypes.SupporterDethroned,
-            initiator: dethronedUserId, // Notif goes to the dethroned user
-            metadata: {
-              supportedUserId: receiverUserId, // The user originally tipped
-              newTopSupporterUserId: topSupporterId, // The usurping user
-              oldAmount: supporters[1].amount,
-              newAmount: supporters[0].amount
-            }
-          })
+            })
+          }
         }
       }
+    } catch (e) {
+      console.log('xyz: got error in dethroned ' + e.message)
     }
 
     await Promise.all(promises)
