@@ -107,6 +107,8 @@ our team [on Discord](https://discord.com/invite/yNUg2e2) or via other channels 
 Please report security issues to `security@audius.co` with a description of the
 vulnerability and any steps to reproduce. Details on our bug bounty program are available at [audius.org/security](https://audius.org/security)
 
+test
+
 ## License
 
 Apache 2.0: [LICENSE file](https://github.com/AudiusProject/audius-protocol/blob/master/LICENSE)
