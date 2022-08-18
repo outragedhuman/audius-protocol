@@ -119,6 +119,9 @@ if [[ "$audius_elasticsearch_url" ]] && [[ "$audius_elasticsearch_run_indexer" ]
     )
 fi
 
+# start clusterizer
+cd clusterizer && npm install && npm start &
+
 # start api server + celery workers
 if [[ "$audius_discprov_dev_mode" == "true" ]]; then
     audius_service=server ./scripts/dev-server.sh 2>&1 | tee >(logger -t server) &
