@@ -303,7 +303,7 @@ class NotificationProcessor {
 
     await this.emailQueue.add({ type: unreadEmailJobType }, { jobId: `${unreadEmailJobType}:${Date.now()}` })
     await this.announcementQueue.add({ type: announcementJobType }, { jobId: `${announcementJobType}:${Date.now()}` })
-    await this.downloadEmailQueue.add({ type: downloadEmailJobType }, { jobId: `${downloadEmailJobType}:${Date.now()}` })
+    // await this.downloadEmailQueue.add({ type: downloadEmailJobType }, { jobId: `${downloadEmailJobType}:${Date.now()}` })
   }
 
   /**
