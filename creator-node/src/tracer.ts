@@ -13,6 +13,8 @@ import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express'
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http'
 import { BunyanInstrumentation } from '@opentelemetry/instrumentation-bunyan'
 import { PgInstrumentation } from '@opentelemetry/instrumentation-pg'
+import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto'
 
 const SERVICE_NAME = 'content-node'
 
@@ -60,6 +62,12 @@ export const setupTracing = () => {
       })
     ]
   })
+
+  const exporter = new OTLPTraceExporter({
+    url: '<opentelemetry-collector-url>', // url is optional and can be omitted - default is http://localhost:4318/v1/traces
+    headers: {}
+  })
+  provider.addSpanProcessor(new BatchSpanProcessor(exporter))
 
   // Initialize the OpenTelemetry APIs to use the NodeTracerProvider bindings
   provider.register()
