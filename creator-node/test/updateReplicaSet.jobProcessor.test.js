@@ -118,6 +118,7 @@ describe('test updateReplicaSet job processor', function () {
     )
   }
 
+  // success
   it('reconfigs 1 secondary when 1 secondary is unhealthy and reconfigs are enabled', async function () {
     // A sync will be needed to this node, so stub returning a successful new sync and no duplicate sync
     const getNewOrExistingSyncReqStub = sandbox.stub().callsFake((args) => {
@@ -200,6 +201,7 @@ describe('test updateReplicaSet job processor', function () {
     })
   })
 
+  // success
   it('reconfigs 2 secondaries when 2 secondaries are unhealthy and reconfigs are enabled', async function () {
     // A sync will be needed to this node, so stub returning a successful new sync and no duplicate sync
     const getNewOrExistingSyncReqStub = sandbox.stub().callsFake((args) => {
@@ -288,6 +290,7 @@ describe('test updateReplicaSet job processor', function () {
     }
   })
 
+  // success
   it('reconfigs 2 secondaries when 1 secondaries is unhealthy, the other secondary was deregistered, and reconfigs are enabled', async function () {
     // A sync will be needed to this node, so stub returning a successful new sync and no duplicate sync
     const getNewOrExistingSyncReqStub = sandbox.stub().callsFake((args) => {
@@ -380,6 +383,7 @@ describe('test updateReplicaSet job processor', function () {
     }
   })
 
+  // success_issue_reconfig_disabled
   it('reconfigs 1 secondary when one secondary is unhealthy but reconfigs are disabled', async function () {
     // It should short-circuit before trying to sync -- no sync will be needed
     const getNewOrExistingSyncReqStub = sandbox.stub().callsFake((args) => {
@@ -447,6 +451,7 @@ describe('test updateReplicaSet job processor', function () {
     })
   })
 
+  // failure_determine_new_replica_set
   it('returns falsy replica set when the whole replica set is unhealthy', async function () {
     // It should short-circuit before trying to sync -- no sync will be needed
     const getNewOrExistingSyncReqStub = sandbox.stub().callsFake((args) => {
@@ -513,4 +518,46 @@ describe('test updateReplicaSet job processor', function () {
       jobsToEnqueue: undefined
     })
   })
+
+  // failure_init_audius_libs
+  it('returns failure_init_audius_libs when AudiusLibs fails to init', async function () {
+    const updateReplicaSetJobProcessor = getJobProcessorStub({
+      healthyNodes,
+      getNewOrExistingSyncReqStub,
+      retrieveClockValueForUserFromReplicaStub
+    })
+
+    const output = await updateReplicaSetJobProcessor({
+      logger,
+      wallet,
+      userId,
+      primary,
+      secondary1,
+      secondary2,
+      unhealthyReplicas,
+      replicaToUserInfoMap,
+      enabledReconfigModes: [RECONFIG_MODES.ENTIRE_REPLICA_SET.key]
+    })
+  })
+
+  // failure_find_healthy_nodes
+  it('returns failure_find_healthy_nodes when it cannot find healthy nodes', async function () {})
+
+  // skip_update_replica_set
+  it('returns skip_update_replica_set', async function () {})
+
+  // failure_no_healthy_nodes
+  it('returns failure_no_healthy_nodes', async function () {})
+
+  // failure_no_valid_sp
+  it('returns failure_no_valid_sp', async function () {})
+
+  // failure_to_update_replica_set
+  it('returns failure_to_update_replica_set', async function () {})
+
+  // failure_issue_update_replica_set
+  it('returns failure_issue_update_replica_set', async function () {})
+
+  // failure_get_current_replica_set
+  it('returns failure_get_current_replica_set', async function () {})
 })
