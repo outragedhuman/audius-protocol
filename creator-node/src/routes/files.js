@@ -32,7 +32,7 @@ const {
 } = require('../middlewares')
 const {
   getAllRegisteredCNodes,
-  findCIDInNetwork,
+  findCIDInNetworkAndWriteToDisk,
   timeout
 } = require('../utils')
 const DBManager = require('../dbManager')
@@ -465,7 +465,7 @@ const getCID = async (req, res) => {
   try {
     startMs = Date.now()
     const libs = req.app.get('audiusLibs')
-    const found = await findCIDInNetwork(
+    const found = await findCIDInNetworkAndWriteToDisk(
       storagePath,
       CID,
       req.logger,
@@ -553,11 +553,11 @@ const getDirCID = async (req, res) => {
     // CID is the file CID, parse it from the storagePath
     const CID = storagePath.split('/').slice(-1).join('')
     const libs = req.app.get('audiusLibs')
-    await findCIDInNetwork(storagePath, CID, req.logger, libs)
+    await findCIDInNetworkAndWriteToDisk(storagePath, CID, req.logger, libs)
     return await streamFromFileSystem(req, res, storagePath)
   } catch (e) {
     req.logger.error(
-      `Error calling findCIDInNetwork for path ${storagePath}`,
+      `Error calling findCIDInNetworkAndWriteToDisk for path ${storagePath}`,
       e
     )
     return sendResponse(req, res, errorResponseServerError(e.message))

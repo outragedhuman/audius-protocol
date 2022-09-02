@@ -728,7 +728,7 @@ const config = convict({
     default: false
   },
   findCIDInNetworkEnabled: {
-    doc: 'enable findCIDInNetwork lookups',
+    doc: 'enable findCIDInNetworkAndWriteToDisk lookups',
     format: Boolean,
     env: 'findCIDInNetworkEnabled',
     default: true

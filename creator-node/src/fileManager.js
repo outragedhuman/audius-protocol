@@ -100,25 +100,31 @@ async function copyMultihashToFs(multihash, srcPath, logContext) {
   return dstPath
 }
 
-async function fetchFileFromNetworkAndWriteToDisk({
-  libs,
-  gatewayContentRoutes,
-  targetGateways,
-  multihash,
-  path,
+/**
+ * Fetches a file from target gateway content routes (e.g. Content Node routes with /ipfs/<cid>)
+ * @param {Object} param
+ * @param {string} param.targetGatewayContentRoutes Content Node routes with /ipfs/<cid>
+ * @param {number} param.trackId the observed track id
+ * @param {number} param.numRetries the number of retries to attempt fetching content
+ * @param {Object} param.logger
+ * @param {Object} param.decisionTree
+ * @returns the Stream data for the content, or null
+ */
+async function fetchFileFromTargetGateway({
+  targetGatewayContentRoutes,
+  trackId,
   numRetries,
   logger,
-  decisionTree,
-  trackId
+  decisionTree
 }) {
   // First try to fetch from other cnode gateways if user has non-empty replica set.
   decisionTree.recordStage({
     name: 'About to race requests via gateways',
-    data: { gatewayContentRoutes }
+    data: { targetGatewayContentRoutes }
   })
 
   // Note - Requests are intentionally not parallel to minimize additional load on gateways
-  for (const contentUrl of gatewayContentRoutes) {
+  for (const contentUrl of targetGatewayContentRoutes) {
     decisionTree.recordStage({
       name: 'Fetching from target gateways',
       data: { replicaUrl: contentUrl }
@@ -126,51 +132,9 @@ async function fetchFileFromNetworkAndWriteToDisk({
 
     try {
       const streamData = await asyncRetry({
-        asyncFn: async (bail) => {
-          let response
-          try {
-            const fetchReqParams = {
-              method: 'get',
-              url: contentUrl,
-              responseType: 'stream',
-              timeout: 20000 /* 20 sec - higher timeout to allow enough time to fetch copy320 */
-            }
-
-            if (trackId) {
-              fetchReqParams.params = {
-                trackId
-              }
-            }
-
-            response = await axios(fetchReqParams)
-          } catch (e) {
-            // Do not retry fetching content if content is delisted or request is bad
-            if (
-              e.response?.status === 403 || // delist
-              e.response?.status === 401 || // unauth
-              e.response?.status === 400 // bad request
-            ) {
-              bail(
-                new Error(
-                  `Content is delisted, request is unauthorized, or the request is bad with statusCode=${e.response?.status}`
-                )
-              )
-              return
-            }
-
-            throw new Error(
-              `Failed to fetch content=${multihash} with statusCode=${e.response?.status}. Retrying..`
-            )
-          }
-
-          if (!response || !response.data) {
-            throw new Error(`Received empty response`)
-          }
-
-          return response.data
-        },
+        asyncFn: fetchContentFn({ contentUrl, trackId }),
         logger,
-        logLabel: 'fetchFileFromNetworkAndWriteToDisk',
+        logLabel: 'fetchContentFromTargetGateway',
         options: {
           retries: numRetries,
           minTimeout: 3000
@@ -182,60 +146,118 @@ async function fetchFileFromNetworkAndWriteToDisk({
         data: { url: contentUrl }
       })
 
-      await Utils.writeStreamToFileSystem(streamData, path)
-
-      decisionTree.recordStage({
-        name: 'Wrote file to file system after fetching from target gateway',
-        data: { expectedStoragePath: path }
-      })
-
-      return
+      return streamData
     } catch (e) {
       decisionTree.recordStage({
-        name: 'Error - Could not retrieve file from gateway',
+        name: 'Error - Could not retrieve file from target gateway',
         data: {
           url: contentUrl,
           errorMsg: e.message,
-          statusCode: e.response?.status,
-          multihash
+          statusCode: e.response?.status
         }
       })
     }
   }
 
-  // If file is not found in replica set, check network (remaining registered nodes)
+  return null
+}
+
+/**
+ * Writes the stream data to disk with retries
+ * @param {Object} param
+ * @param {Stream} param.streamData the stream to write to disk
+ * @param {string} param.path the path to write the stream data to
+ * @param {Object} param.decisionTree
+ * @param {Object} param.logger
+ * @param {number} param.numRetries number of retries
+ */
+async function writeToDisk({
+  streamData,
+  path,
+  decisionTree,
+  logger,
+  numRetries
+}) {
   try {
-    const found = await findCIDInNetwork(
-      path,
-      multihash,
+    await asyncRetry({
+      asyncFn: async () => {
+        try {
+          await Utils.writeStreamToFileSystem(streamData, path)
+
+          decisionTree.recordStage({
+            name: 'Wrote file to file system after fetching from target gateway',
+            data: { expectedStoragePath: path }
+          })
+        } catch (e) {
+          logger.error(
+            `Could not write file to fs at path=${path}: ${e.message}. Removing file..`
+          )
+
+          // Note: this fn may throw if file does not exist on disk. This is okay as this flow will retry
+          await removeFile(path)
+        }
+      },
       logger,
-      libs,
-      /** trackId */ null,
-      /** excludeList */ targetGateways
-    )
-
-    if (!found) {
-      throw new Error(`Did not find multihash=${multihash} from network`)
-    }
-
-    decisionTree.recordStage({
-      name: 'Found file from network'
+      logLabel: 'fetchContentFromTargetGateway',
+      options: {
+        retries: numRetries,
+        minTimeout: 3000
+      }
     })
-
-    return
   } catch (e) {
     decisionTree.recordStage({
-      name: `Failed to find file from network`,
-      data: { errorMsg: e.message }
+      name: 'Error - Could not write file to fs',
+      data: {
+        errorMsg: e.message
+      }
     })
   }
+}
 
-  // error if file was not found on any gateway
-  const errorMsg = `Failed to retrieve file for multihash ${multihash} after trying entire network`
-  decisionTree.recordStage({
-    name: errorMsg
-  })
-  throw new Error(errorMsg)
+function fetchContentFn({ contentUrl, trackId }) {
+  return async (bail) => {
+    let response
+    try {
+      const fetchReqParams = {
+        method: 'get',
+        url: contentUrl,
+        responseType: 'stream',
+        timeout: 20000 /* 20 sec - higher timeout to allow enough time to fetch copy320 */
+      }
+
+      if (trackId) {
+        fetchReqParams.params = {
+          trackId
+        }
+      }
+
+      response = await axios(fetchReqParams)
+    } catch (e) {
+      // Do not retry fetching content if content is delisted or request is bad
+      if (
+        e.response?.status === 403 || // delist
+        e.response?.status === 401 || // unauth
+        e.response?.status === 400 // bad request
+      ) {
+        bail(
+          new Error(
+            `Content is delisted, request is unauthorized, or the request is bad with statusCode=${e.response?.status}`
+          )
+        )
+        return
+      }
+
+      throw new Error(
+        `Failed to fetch with statusCode=${e.response?.status}. Retrying..`
+      )
+    }
+
+    if (!response || !response.data) {
+      throw new Error(`Received empty response`)
+    }
+
+    return response.data
+  }
 }
 
 /**
@@ -276,7 +298,7 @@ async function saveFileForMultihashToFS(
     // TODO - don't concat url's by hand like this, use module like urljoin
     // ..replace(/\/$/, "") removes trailing slashes
 
-    let gatewayContentRoutes = targetGateways.map((endpoint) => {
+    let targetGatewayContentRoutes = targetGateways.map((endpoint) => {
       let baseUrl = `${endpoint.replace(/\/$/, '')}/ipfs/${multihash}`
       if (trackId) baseUrl += `?trackId=${trackId}`
 
@@ -290,7 +312,7 @@ async function saveFileForMultihashToFS(
       data: {
         multihash,
         targetGateways,
-        gatewayContentRoutes,
+        targetGatewayContentRoutes,
         expectedStoragePath,
         parsedStoragePath
       },
@@ -330,7 +352,7 @@ async function saveFileForMultihashToFS(
       // in the case of a directory, override the gatewayUrlsMapped array to look like
       // [https://endpoint.co/ipfs/Qm111/150x150.jpg, https://endpoint.co/ipfs/Qm222/150x150.jpg ...]
       // ..replace(/\/$/, "") removes trailing slashes
-      gatewayContentRoutes = targetGateways.map(
+      targetGatewayContentRoutes = targetGateways.map(
         (endpoint) =>
           `${endpoint.replace(/\/$/, '')}/ipfs/${
             matchObj.outer
@@ -338,7 +360,7 @@ async function saveFileForMultihashToFS(
       )
       decisionTree.recordStage({
         name: 'Updated gatewayUrlsMapped',
-        data: { gatewayContentRoutes }
+        data: { targetGatewayContentRoutes }
       })
     }
 
@@ -349,26 +371,58 @@ async function saveFileForMultihashToFS(
      *  - If file does not exist on user's replca set, try the network and write to disk if file exists
      */
 
-    if (await fs.pathExists(expectedStoragePath)) {
-      decisionTree.recordStage({
-        name: 'Success - File already stored on disk',
-        data: { expectedStoragePath }
-      })
+    // if (await fs.pathExists(expectedStoragePath)) {
+    //   decisionTree.recordStage({
+    //     name: 'Success - File already stored on disk',
+    //     data: { expectedStoragePath }
+    //   })
 
-      return
-    }
+    //   return
+    // }
 
-    await fetchFileFromNetworkAndWriteToDisk({
-      libs,
-      gatewayContentRoutes,
-      targetGateways,
-      multihash,
-      path: expectedStoragePath,
+    const streamData = await fetchFileFromTargetGateway({
+      targetGatewayContentRoutes,
+      trackId,
       numRetries,
       logger,
-      decisionTree,
-      trackId
+      decisionTree
     })
+
+    if (streamData) {
+      await writeToDisk({ streamData, path: expectedStoragePath, decisionTree })
+    } else {
+      try {
+        // If file is not found in replica set, check network (remaining registered nodes)
+        // Function inherently writes to disk as well
+        const found = await findCIDInNetwork(
+          path,
+          multihash,
+          logger,
+          libs,
+          trackId,
+          /** excludeList */ targetGateways,
+          numRetries,
+          /* verifyContent */ false // Will be verified later in this flow
+        )
+
+        if (!found) {
+          throw new Error(
+            `Failed to retrieve file for multihash ${multihash} after trying network`
+          )
+        }
+
+        decisionTree.recordStage({
+          name: 'Found file from network'
+        })
+      } catch (e) {
+        decisionTree.recordStage({
+          name: `Failed to find file from network and target gateways`,
+          data: { errorMsg: e.message }
+        })
+
+        throw e
+      }
+    }
 
     try {
       await asyncRetry({

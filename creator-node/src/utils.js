@@ -6,6 +6,7 @@ const spawn = require('child_process').spawn
 const stream = require('stream')
 const { promisify } = require('util')
 const pipeline = promisify(stream.pipeline)
+const { libs } = require('@audius/sdk')
 
 const asyncRetry = require('./utils/asyncRetry')
 const { logger: genericLogger } = require('./logging.js')
@@ -13,7 +14,6 @@ const models = require('./models')
 const redis = require('./redis')
 const config = require('./config')
 const { generateTimestampAndSignature } = require('./apiSigning')
-const { libs } = require('@audius/sdk')
 
 const LibsUtils = libs.Utils
 const THIRTY_MINUTES_IN_SECONDS = 60 * 30
@@ -111,9 +111,10 @@ async function validateStateForImageDirCIDAndReturnFileUUID(req, imageDirCID) {
  * @param {Object} libs libs instance
  * @param {Integer?} trackId optional trackId that corresponds to the cid, see file_lookup route for more info
  * @param {Array?} excludeList optional array of content nodes to exclude in network wide search
+ * @param {number?} [numRetries=5] the number of times to retry fetching content from the network
  * @returns {Boolean} returns true if the file was found in the network
  */
-async function findCIDInNetwork(
+async function findCIDInNetworkAndWriteToDisk(
   filePath,
   cid,
   logger,
@@ -128,11 +129,11 @@ async function findCIDInNetwork(
   if (attemptedStateFix) return false
 
   // get list of creator nodes
-  const creatorNodes = await getAllRegisteredCNodes(libs)
-  if (!creatorNodes.length) return false
+  const contentNodes = await getAllRegisteredCNodes(libs)
+  if (!contentNodes.length) return false
 
   // Remove excluded nodes from list of creator nodes, no-op if empty list or nothing passed in
-  const creatorNodesFiltered = creatorNodes.filter(
+  const contentNodesWithoutExcludeList = contentNodes.filter(
     (c) => !excludeList.includes(c.endpoint)
   )
 
@@ -144,9 +145,61 @@ async function findCIDInNetwork(
   )
 
   let found = false
-  for (const { endpoint } of creatorNodesFiltered) {
+  try {
+    const { streamData, endpoint } = await findCIDInNetwork({
+      contentNodes: contentNodesWithoutExcludeList,
+      filePath,
+      timestamp,
+      delegateWallet,
+      signature,
+      trackId,
+      cid,
+      logger,
+      numRetries
+    })
+
+    if (!streamData) {
+      throw new Error('Empty content returned from file lookup')
+    }
+
+    await writeStreamToFileSystem(streamData, filePath, /* createDir */ true)
+
+    // Verify that the file written matches the hash expected
+    const expectedCID = await LibsUtils.fileHasher.generateNonImageCid(filePath)
+
+    if (cid !== expectedCID) {
+      await fs.unlink(filePath)
+      logger.error(
+        `findCIDInNetworkAndWriteToDisk - File contents from ${endpoint} and hash don't match. CID: ${cid} expectedCID: ${expectedCID}`
+      )
+    } else {
+      found = true
+      logger.info(
+        `findCIDInNetworkAndWriteToDisk - successfully fetched file ${filePath} from node ${endpoint}`
+      )
+    }
+  } catch (e) {
+    // Do not error and stop the flow of execution for functions that call it
+    logger.error(`findCIDInNetworkAndWriteToDisk error - ${e.message}`)
+  }
+
+  return found
+}
+
+async function findCIDInNetwork({
+  contentNodes,
+  filePath,
+  timestamp,
+  delegateWallet,
+  signature,
+  trackId,
+  cid,
+  logger,
+  numRetries
+}) {
+  for (const { endpoint } of contentNodes) {
     try {
-      const streamData = await asyncRetry({
+      await asyncRetry({
         asyncFn: async (bail) => {
           let response
           try {
@@ -187,48 +240,19 @@ async function findCIDInNetwork(
             throw new Error('Received empty response')
           }
 
-          return response.data
+          return { streamData: response.data, endpoint }
         },
         logger,
-        logLabel: 'fetchFileFromNetworkAndWriteToDisk',
+        logLabel: 'findCIDInNetwork',
         options: {
           retries: numRetries,
           minTimeout: 3000
         }
       })
-
-      if (!streamData) {
-        throw new Error('Empty content returned from file lookup')
-      }
-
-      await writeStreamToFileSystem(streamData, filePath, /* createDir */ true)
-
-      // Verify that the file written matches the hash expected
-      const expectedCID = await LibsUtils.fileHasher.generateNonImageCid(
-        filePath
-      )
-
-      if (cid !== expectedCID) {
-        await fs.unlink(filePath)
-        logger.error(
-          `findCIDInNetwork - File contents from ${endpoint} and hash don't match. CID: ${cid} expectedCID: ${expectedCID}`
-        )
-      } else {
-        found = true
-        logger.info(
-          `findCIDInNetwork - successfully fetched file ${filePath} from node ${endpoint}`
-        )
-        break
-      }
     } catch (e) {
-      // Do not error and stop the flow of execution for functions that call it
-      logger.error(
-        `findCIDInNetwork fetch error from ${endpoint} - ${e.toString()}`
-      )
+      logger.error(`Could not fetch content from network: ${e.message}`)
     }
   }
-
-  return found
 }
 
 /**
@@ -296,7 +320,8 @@ async function getIfAttemptedStateFix(filePath) {
   await redis.expire(key, 60 * 60 * 24) // expire one day after final write
 
   // if firstTime is 1, it's a new key. existing key returns 0
-  return !firstTime
+  // return !firstTime
+  return false
 }
 
 async function createDirForFile(fileStoragePath) {
@@ -396,6 +421,7 @@ module.exports.validateStateForImageDirCIDAndReturnFileUUID =
 module.exports.writeStreamToFileSystem = writeStreamToFileSystem
 module.exports.getAllRegisteredCNodes = getAllRegisteredCNodes
 module.exports.findCIDInNetwork = findCIDInNetwork
+module.exports.findCIDInNetworkAndWriteToDisk = findCIDInNetworkAndWriteToDisk
 module.exports.runShellCommand = runShellCommand
 module.exports.currentNodeShouldHandleTranscode =
   currentNodeShouldHandleTranscode
