@@ -110,3 +110,4 @@ vulnerability and any steps to reproduce. Details on our bug bounty program are 
 ## License
 
 Apache 2.0: [LICENSE file](https://github.com/AudiusProject/audius-protocol/blob/master/LICENSE)
+
