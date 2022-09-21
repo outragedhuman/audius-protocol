@@ -77,7 +77,12 @@ export const setupTracing = () => {
     instrumentations: [
       // Express instrumentation expects HTTP layer to be instrumented
       // This reads and writes the appropriate opentelemetry headers to requests
-      new HttpInstrumentation(),
+      new HttpInstrumentation({
+        requestHook: (span, request) => {
+          span.setAttribute('spid', SPID)
+          span.setAttribute('endpoint', ENDPOINT)
+        }
+      }),
 
       // Adds spans to express routes
       new ExpressInstrumentation(),
