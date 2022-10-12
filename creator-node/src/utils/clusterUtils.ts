@@ -43,6 +43,9 @@ class ClusterUtils {
   }
 
   getNumWorkers() {
+    // There are technically no workers and no primary if cluster mode is disabled, but for division we want to act like there's 1 worker
+    if (!this.isClusterEnabled()) return 1
+
     // This is called `cpus()` but it actually returns the # of logical cores, which is possibly higher than # of physical cores if there's hyperthreading
     const logicalCores = cpus().length
     return config.get('expressAppConcurrency') || logicalCores
