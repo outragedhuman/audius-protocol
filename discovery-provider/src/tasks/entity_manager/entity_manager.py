@@ -218,6 +218,9 @@ def entity_manager_update(
         metric_num_changed.save(
             len(new_records["tracks"]), {"entity_type": EntityType.TRACK.value}
         )
+        logger.info(
+            f"entity_manager.py | joaquin | {len(new_records["playlists"])} | {len(new_records["tracks"])} | {new_records}"
+        )
 
         logger.info(
             f"entity_manager.py | Completed with {num_total_changes} total changes"
