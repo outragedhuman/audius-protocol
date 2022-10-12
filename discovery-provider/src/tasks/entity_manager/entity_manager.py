@@ -183,7 +183,7 @@ def entity_manager_update(
                 except Exception as e:
                     # swallow exception to keep indexing
                     logger.info(
-                        f"entity_manager.py | failed to process tx error {e} | with event {event}"
+                        f"entity_manager.py | failed to process tx error {e} | {metric_num_errors.elapsed(start_time=start_time_tx)} sec | with event {event}"
                     )
                     metric_num_errors.save_time(
                         {"entity_type": params.entity_type}, start_time=start_time_tx
@@ -221,7 +221,7 @@ def entity_manager_update(
         playlist_length = len(new_records["playlists"])
         tracks_length = len(new_records["tracks"])
         logger.info(
-            f"entity_manager.py | joaquin | {playlist_length} | {tracks_length} | {new_records}"
+            f"entity_manager.py | joaquin | {metric_latency.elapsed()} | {playlist_length} | {tracks_length} | {new_records}"
         )
 
         logger.info(
