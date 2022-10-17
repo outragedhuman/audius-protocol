@@ -257,6 +257,9 @@ parameters:
   slash_address:
     type: string
     default: ""
+  cut_release:
+    type: string
+    default: ""
   reservations:
     type: string
     default: ""
@@ -1324,6 +1327,7 @@ workflows:
          - not: << pipeline.parameters.deploy_args >>
          - not: << pipeline.parameters.reservations >>
          - not: << pipeline.parameters.slash_address >>
+         - not: << pipeline.parameters.cut_release >>
     jobs:
       - noop:
           name: tests
@@ -1782,6 +1786,21 @@ workflows:
           context:
             - slack-secrets
             - gh-tokens.releases
+
+  # in order to trigger this job
+  # 1. go to the CircleCI dashboard
+  # 2. click "Trigger Pipeline"
+  # 3. Add string parameter "cut_release" with any non-null value
+  cut-release:
+    when: << pipeline.parameters.cut_release >>
+    jobs:
+      - release-scripts:
+          name: cut-release
+          target: cut-release
+          context:
+            - slack-secrets
+            - gh-tokens.releases
+      - generate-release-checklist
 
   # in order to trigger this job
   # 1. go to the CircleCI dashboard
