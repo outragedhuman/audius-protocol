@@ -1,9 +1,9 @@
-const axios = require('axios')
-const convict = require('convict')
-const fs = require('fs-extra')
-const path = require('path')
-const os = require('os')
-const _ = require('lodash')
+import axios from 'axios'
+import convict from 'convict'
+import fs from 'fs-extra'
+import path from 'path'
+import os from 'os'
+import _ from 'lodash'
 
 // can't import logger here due to possible circular dependency, use console
 
@@ -11,10 +11,10 @@ const _ = require('lodash')
 // https://github.com/mozilla/node-convict/issues/380
 convict.addFormat({
   name: 'BooleanCustom',
-  validate: function (val) {
+  validate: function (val: any) {
     return typeof val === 'boolean' || typeof val === 'string'
   },
-  coerce: function (val) {
+  coerce: function (val: any) {
     return val === true || val === 'true'
   }
 })
@@ -131,12 +131,6 @@ const config = convict({
     format: 'nat',
     env: 'headersTimeout',
     default: 60 * 1000 // 60s - node.js default value
-  },
-  sequelizeStatementTimeout: {
-    doc: 'Sequelize (postgres) statement timeout',
-    format: 'nat',
-    env: 'sequelizeStatementTimeout',
-    default: 60 * 60 * 1000 // 1hr
   },
   logLevel: {
     doc: 'Log level',
@@ -304,13 +298,13 @@ const config = convict({
     doc: 'wallet address',
     format: String,
     env: 'delegateOwnerWallet',
-    default: null
+    default: ''
   },
   delegatePrivateKey: {
     doc: 'private key string',
     format: String,
     env: 'delegatePrivateKey',
-    default: null
+    default: ''
   },
   solDelegatePrivateKeyBase64: {
     doc: 'Base64-encoded Solana private key created using delegatePrivateKey as the seed (auto-generated -- any input here will be overwritten)',
@@ -413,7 +407,7 @@ const config = convict({
     doc: 'http endpoint registered on chain for cnode',
     format: String,
     env: 'creatorNodeEndpoint',
-    default: null
+    default: ''
   },
   discoveryProviderWhitelist: {
     doc: 'Whitelisted discovery providers to select from (comma-separated)',
@@ -425,7 +419,7 @@ const config = convict({
     doc: 'Number of missed blocks after which a discovery node would be considered unhealthy',
     format: 'nat',
     env: 'discoveryNodeUnhealthyBlockDiff',
-    default: 15
+    default: 500
   },
   identityService: {
     doc: 'Identity service endpoint to record creator-node driven plays against',
@@ -554,7 +548,7 @@ const config = convict({
     doc: 'Max concurrency of saveFileForMultihashToFS calls inside nodesync',
     format: 'nat',
     env: 'nodeSyncFileSaveMaxConcurrency',
-    default: 5
+    default: 10
   },
   syncQueueMaxConcurrency: {
     doc: 'Max concurrency of SyncQueue',
@@ -700,7 +694,7 @@ const config = convict({
     doc: 'Flag to enable or disable the nginx cache layer that caches content. DO NOT SET THIS HERE, set in the Dockerfile because it needs to be set above the application layer',
     format: 'BooleanCustom',
     env: 'contentCacheLayerEnabled',
-    default: true
+    default: false
   },
   reconfigNodeWhitelist: {
     doc: 'Comma separated string - list of Content Nodes to select from for reconfig. Empty string = whitelist all.',
@@ -827,7 +821,7 @@ const config = convict({
  * So if registryAddress or ownerWallet env variables are defined, they take precendence.
  */
 
-const pathTo = (fileName) => path.join(process.cwd(), fileName)
+const pathTo = (fileName: string) => path.join(process.cwd(), fileName)
 
 // TODO(DM) - remove these defaults
 const defaultConfigExists = fs.existsSync('default-config.json')
@@ -858,15 +852,15 @@ config.set(
     : config
         .get('reconfigSPIdBlacklistString')
         .split(',')
-        .filter((e) => e)
-        .map((e) => parseInt(e))
+        .filter((e: any) => e)
+        .map((e: any) => parseInt(e))
 )
 
 // Perform validation and error any properties are not present on schema
 config.validate()
 
 // Retrieves and populates IP info configs
-const asyncConfig = async () => {
+export const asyncConfig = async () => {
   try {
     const ipinfo = await axios.get('https://ipinfo.io')
     const country = ipinfo.data.country
@@ -875,13 +869,15 @@ const asyncConfig = async () => {
     if (!config.get('serviceCountry')) config.set('serviceCountry', country)
     if (!config.get('serviceLatitude')) config.set('serviceLatitude', lat)
     if (!config.get('serviceLongitude')) config.set('serviceLongitude', long)
-  } catch (e) {
+  } catch (e: any) {
     console.error(
       `config.js:asyncConfig(): Failed to retrieve IP info || ${e.message}`
     )
   }
 }
 
-config.asyncConfig = asyncConfig
+export type NodeConfig = typeof config
+
+export default config
 
 module.exports = config
