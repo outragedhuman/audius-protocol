@@ -160,6 +160,7 @@ export class ServiceSelection {
 
     // Get all the services
     let services = await this.getServices()
+    console.log('services:', services)
     this.decisionTree.push({
       stage: DECISION_TREE_STATE.GET_ALL_SERVICES,
       val: services
@@ -273,6 +274,7 @@ export class ServiceSelection {
     }
 
     // Key the services by their health check endpoint
+    console.log('serviceSelection:', services)
     const urlMap = services.reduce<Record<string, Service>>(
       (urlMap, service) => {
         urlMap[
@@ -359,6 +361,7 @@ export class ServiceSelection {
 
   /** Where does the health check for this type of service live */
   static getHealthCheckEndpoint(service: string) {
+    console.log('getHealthCheckEndpoint!!!')
     return `${service}/health_check`
   }
 
@@ -374,6 +377,7 @@ export class ServiceSelection {
 
   /** Races requests against each other with provided timeouts and health checks */
   async race(services: string[]) {
+    console.log('race services:', services)
     // Key the services by their health check endpoint
     const serviceMap = services.reduce<Record<string, string>>((acc, s) => {
       acc[ServiceSelection.getHealthCheckEndpoint(s)] = s

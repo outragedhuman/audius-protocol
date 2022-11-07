@@ -323,7 +323,7 @@ export class Users extends Base {
       // Update the new primary to the auto-selected primary
       phase = phases.SET_PRIMARY
       await this.creatorNode.setEndpoint(primary)
-
+      
       // Update metadata in CN and on chain of newly assigned replica set
       phase = phases.UPLOAD_METADATA_AND_UPDATE_ON_CHAIN
       await this.updateAndUploadMetadata({
@@ -341,6 +341,7 @@ export class Users extends Base {
       const errorMsg = `assignReplicaSet() Error -- Phase ${phase} in ${
         Date.now() - fnStartMs
       }ms: ${e}`
+      console.log(e)
       throw new Error(errorMsg)
     }
 
@@ -492,6 +493,7 @@ export class Users extends Base {
       const errorMsg = `assignReplicaSet() Error -- Phase ${phase} in ${
         Date.now() - fnStartMs
       }ms: ${e}`
+      console.log(e)
       throw new Error(errorMsg)
     }
   }
@@ -882,10 +884,12 @@ export class Users extends Base {
 
     try {
       // Update user creator_node_endpoint on chain if applicable
+      console.log(newMetadata.creator_node_endpoint !== oldMetadata.creator_node_endpoint)
       if (
         newMetadata.creator_node_endpoint !== oldMetadata.creator_node_endpoint
       ) {
         phase = phases.UPDATE_CONTENT_NODE_ENDPOINT_ON_CHAIN
+        console.log('newMetadata', newMetadata)
         const { txReceipt, replicaSetSPIDs } =
           await this._updateReplicaSetOnChain(
             userId,
@@ -1003,10 +1007,14 @@ export class Users extends Base {
 
       console.log(`${logPrefix} completed in ${Date.now() - fnStartMs}ms`)
     } catch (e) {
+      console.log('newMetadata::', newMetadata)
+      console.log('oldMetadata::', oldMetadata)
+      console.trace('show me')
       // TODO: think about handling the update metadata on chain and associating..
       const errorMsg = `updateAndUploadMetadata() Error -- Phase ${phase} in ${
         Date.now() - fnStartMs
       }ms: ${e}`
+      console.log(e)
       throw new Error(errorMsg)
     }
   }
@@ -1300,6 +1308,7 @@ export class Users extends Base {
     if (!this.contracts.UserReplicaSetManagerClient) {
       await this.contracts.initUserReplicaSetManagerClient()
     }
+    console.log('updated stuff')
 
     const primaryEndpoint = CreatorNode.getPrimary(creatorNodeEndpoint)
     const secondaries = CreatorNode.getSecondaries(creatorNodeEndpoint)
@@ -1323,6 +1332,7 @@ export class Users extends Base {
     // Fallback to EntityManager when relay errors
     let updateEndpointTxBlockNumber
     let replicaSetSPIDs
+    console.log('foossss')
     try {
       txReceipt =
         await this.contracts.UserReplicaSetManagerClient?.updateReplicaSet(
@@ -1332,6 +1342,8 @@ export class Users extends Base {
         )
       replicaSetSPIDs = [primarySpID, secondary1SpID, secondary2SpID]
       updateEndpointTxBlockNumber = txReceipt?.blockNumber
+
+      console.log('txReceipt1:', txReceipt)
 
       await this._waitForURSMCreatorNodeEndpointIndexing(
         userId,
@@ -1365,6 +1377,7 @@ export class Users extends Base {
         oldPrimary: oldPrimary,
         oldSecondaries: [oldSecondary1SpID, oldSecondary2SpID]
       })
+      console.log('txReceipt2:', txReceipt)
       replicaSetSPIDs = [primarySpID, secondary1SpID, secondary2SpID]
       updateEndpointTxBlockNumber = txReceipt?.blockNumber
 

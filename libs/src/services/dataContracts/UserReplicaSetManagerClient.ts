@@ -16,6 +16,7 @@ export class UserReplicaSetManagerClient extends ContractClient {
     primary: number,
     secondaries: number[]
   ) {
+    console.log(primary, secondaries)
     const existingReplicaSetInfo = await this.getUserReplicaSet(userId)
     return await this._updateReplicaSet(
       userId,

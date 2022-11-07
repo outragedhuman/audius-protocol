@@ -88,8 +88,8 @@ program.command("upload-track")
           isrc: null,
           iswc: null,
           track_segments: [],
-          is_premium: !!premiumConditions,
-          premium_conditions: JSON.parse(premiumConditions),
+          is_premium: false,
+          premium_conditions: {},
         },
         () => null,
       );

@@ -74,6 +74,7 @@ type LibsComstockConfig = {
 }
 
 type AudiusLibsConfig = {
+  // _allowMonoReplicaSet: boolean
   web3Config: Web3Config
   ethWeb3Config: EthWeb3Config
   solanaWeb3Config: SolanaWeb3Config

@@ -3,6 +3,7 @@ import { PublicKey } from "@solana/web3.js";
 
 export const initializeAudiusLibs = async (handle) => {
   const audiusLibs = new AudiusLibs({
+    _allowMonoReplicaSet: true,
     ethWeb3Config: AudiusLibs.configEthWeb3(
       process.env.ETH_TOKEN_ADDRESS,
       process.env.ETH_REGISTRY_ADDRESS,
@@ -26,8 +27,8 @@ export const initializeAudiusLibs = async (handle) => {
     }),
     discoveryProviderConfig: {},
     creatorNodeConfig: AudiusLibs.configCreatorNode(
-      "http://audius-protocol-creator-node-1.audius-protocol_default:4000",
-      // process.env.FALLBACK_CREATOR_NODE_URL,
+      //"http://audius-protocol-creator-node-1.audius-protocol_default:4000",
+      process.env.FALLBACK_CREATOR_NODE_URL,
     ),
     identityServiceConfig: AudiusLibs.configIdentityService(
       process.env.IDENTITY_SERVICE_URL,

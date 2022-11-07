@@ -5,7 +5,8 @@ npx ganache \
   --wallet.deterministic \
   --wallet.totalAccounts 50 \
   --database.dbPath /usr/db \
-  --chain.networkId 1000000000001 &
+  --chain.networkId 1000000000001 \
+  --logging.debug &
 
 while ! node -e "require('http').request('http://poa-blockscout:4000').end()" 2>/dev/null; do
   sleep 1
