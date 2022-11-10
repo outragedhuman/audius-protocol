@@ -1,7 +1,7 @@
 """backfill_artist_pick
 
 Revision ID: 2fad3671bf9f
-Revises: a8752810936c
+Revises: f91c041d1d8d
 Create Date: 2022-10-27 02:14:19.935610
 
 """
@@ -16,7 +16,7 @@ from sqlalchemy.dialects.postgresql import ARRAY
 
 # revision identifiers, used by Alembic.
 revision = '2fad3671bf9f'
-down_revision = 'a8752810936c'
+down_revision = 'f91c041d1d8d'
 branch_labels = None
 depends_on = None
 
@@ -56,7 +56,7 @@ def build_sql(up, env):
 def upgrade():
     env = os.getenv("audius_discprov_env")
     if env != "stage" and env != "prod":
-        pass
+        return
     connection = op.get_bind()
     sql, params = build_sql(True, env)
     connection.execute(sql, params)
@@ -64,7 +64,7 @@ def upgrade():
 def downgrade():
     env = os.getenv("audius_discprov_env")
     if env != "stage" and env != "prod":
-        pass
+        return
     connection = op.get_bind()
     sql, params = build_sql(False, env)
     connection.execute(sql, params)
