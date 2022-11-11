@@ -51,6 +51,8 @@ opentelemetry-semantic-conventions==0.33b0
 opentelemetry-util-http==0.33b0
 lxml==4.9.1
 
+nats-py==2.2.0
+
 # Solana support
 base58==2.1.0
 certifi==2020.12.5

@@ -369,15 +369,16 @@ def configure_celery(celery, test_config=None):
             if "url_read_replica" in test_config["db"]:
                 database_url_read_replica = test_config["db"]["url_read_replica"]
 
-    indexing_interval_sec = int(
-        shared_config["discprov"]["block_processing_interval_sec"]
-    )
+    # indexing_interval_sec = int(
+    #     shared_config["discprov"]["block_processing_interval_sec"]
+    # )
 
     # Update celery configuration
     celery.conf.update(
         imports=[
             "src.tasks.index",
             "src.tasks.index_nethermind",
+            "src.tasks.index_nats",
             "src.tasks.index_metrics",
             "src.tasks.index_aggregate_monthly_plays",
             "src.tasks.index_hourly_play_counts",
@@ -407,13 +408,17 @@ def configure_celery(celery, test_config=None):
             "src.tasks.update_track_is_available",
         ],
         beat_schedule={
-            "update_discovery_provider": {
-                "task": "update_discovery_provider",
-                "schedule": timedelta(seconds=indexing_interval_sec),
-            },
-            "update_discovery_provider_nethermind": {
-                "task": "update_discovery_provider_nethermind",
-                "schedule": timedelta(seconds=indexing_interval_sec),
+            # "update_discovery_provider": {
+            #     "task": "update_discovery_provider",
+            #     "schedule": timedelta(seconds=indexing_interval_sec),
+            # },
+            # "update_discovery_provider_nethermind": {
+            #     "task": "update_discovery_provider_nethermind",
+            #     "schedule": timedelta(seconds=indexing_interval_sec),
+            # },
+            "index_nats": {
+                "task": "index_nats",
+                "schedule": timedelta(30),
             },
             "update_metrics": {
                 "task": "update_metrics",

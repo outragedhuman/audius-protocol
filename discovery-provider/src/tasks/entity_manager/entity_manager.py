@@ -96,7 +96,12 @@ def entity_manager_update(
 
         # process in tx order and populate records_to_save
         for tx_receipt in entity_manager_txs:
-            txhash = update_task.web3.toHex(tx_receipt.transactionHash)
+
+            # NATS: skip txhash
+            txhash = ""
+            if hasattr(tx_receipt, "transactionHash"):
+                txhash = update_task.web3.toHex(tx_receipt.transactionHash)
+
             entity_manager_event_tx = get_entity_manager_events_tx(
                 update_task, tx_receipt
             )
@@ -408,6 +413,10 @@ def fetch_existing_entities(session: Session, entities_to_fetch: EntitiesToFetch
 
 
 def get_entity_manager_events_tx(update_task, tx_receipt):
+    # NATS: we already have the literal thing
+    if "args" in tx_receipt:
+        return [tx_receipt]
+
     return getattr(
         update_task.entity_manager_contract.events, MANAGE_ENTITY_EVENT_TYPE
     )().processReceipt(tx_receipt)
