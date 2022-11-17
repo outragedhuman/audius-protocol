@@ -3,5 +3,5 @@
     "dockerComposeFile": ["../docker-compose.yml"],
     "service": "identity-service",
     "shutdownAction": "none",
-    "workspaceFolder": "/workspace/identity-service"
+    "workspaceFolder": "/usr/src/app"
 }

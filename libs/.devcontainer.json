@@ -1,7 +1,7 @@
 {
-    "name": "Creator Node",
+    "name": "Audius Cmd",
     "dockerComposeFile": ["../docker-compose.yml"],
-    "service": "creator-node",
+    "service": "audius-cmd",
     "shutdownAction": "none",
     "workspaceFolder": "/usr/src/app"
 }
