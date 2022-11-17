@@ -18,4 +18,4 @@ isort ${ISORT_FLAG} discovery-provider/alembic/
 isort ${ISORT_FLAG} discovery-provider/integration_tests/
 black ${BLACK_FLAG} discovery-provider/src/
 black ${BLACK_FLAG} discovery-provider/integration_tests/
-mypy --ignore-missing-imports --follow-imports=silent --show-column-numbers discovery-provider/src/
+# mypy --ignore-missing-imports --follow-imports=silent --show-column-numbers discovery-provider/src/

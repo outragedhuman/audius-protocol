@@ -1,0 +1,8 @@
+{
+    "name": "Creator Node",
+    "dockerComposeFile": ["../docker-compose.yml"],
+    "service": "creator-node",
+    "shutdownAction": "none",
+    "workspaceFolder": "/usr/src/app/src"
+    // "workspaceFolder": "/workspace/creator-node"
+}

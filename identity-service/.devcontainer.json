@@ -1,0 +1,7 @@
+{
+    "name": "Identity Service",
+    "dockerComposeFile": ["../docker-compose.yml"],
+    "service": "identity-service",
+    "shutdownAction": "none",
+    "workspaceFolder": "/workspace/identity-service"
+}

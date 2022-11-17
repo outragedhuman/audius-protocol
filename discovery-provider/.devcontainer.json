@@ -1,0 +1,7 @@
+{
+    "name": "Discovery Provider",
+    "dockerComposeFile": ["../docker-compose.yml"],
+    "service": "discovery-provider",
+    "shutdownAction": "none",
+    "workspaceFolder": "/audius-discovery-provider"
+}
