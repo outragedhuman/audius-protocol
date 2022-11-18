@@ -1,0 +1,53 @@
+version: "3.9"
+
+services:
+
+  build-audius-libs:
+    build: libs
+    command: sh /tmp/dev-tools/startup/build-audius-libs.sh
+    volumes:
+      - audius-libs:/usr/src/app
+      - ./libs/src:/usr/src/app/src
+      - ./dev-tools:/tmp/dev-tools
+
+  audius-cmd:
+    build: dev-tools/commands
+    command: sh -c "tail -f /dev/null"
+    volumes:
+      - audius-libs:/usr/src/app/node_modules/@audius/sdk
+    depends_on:
+      build-audius-libs:
+        condition: service_started
+
+  # creator-node:
+  #   build: creator-node
+  #   command: sh -c "tail -f /dev/null"
+  #   env_file: .env # used by the startup script
+  #   volumes:
+  #     # Mount the root folder that contains .git
+  #     #- .:/workspace:cached
+  #     - ./creator-node/src:/usr/src/app/src
+
+  # discovery-provider:
+  #   build: discovery-provider
+  #   command: sh -c "tail -f /dev/null"
+  #   env_file: .env # used by the startup script
+  #   volumes:
+  #     # Mount the root folder that contains .git
+  #     #- .:/workspace:cached
+  #     - ./discovery-provider/src:/audius-discovery-provider/src
+
+  # identity-service:
+  #   build: identity-service
+  #   command: sh -c "tail -f /dev/null"
+  #   env_file: .env # used by the startup script
+  #   volumes:
+  #     # Mount the root folder that contains .git
+  #     # - .:/workspace:cached
+  #     - ./identity-service/src:/usr/src/app/src
+
+volumes:
+  # poa-contracts-abis:
+  # eth-contracts-abis:
+  # solana-programs-idl:
+  audius-libs:

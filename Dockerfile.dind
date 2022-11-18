@@ -1,0 +1,8 @@
+FROM docker:dind
+
+RUN apk update && apk add bash curl
+
+RUN curl -fsSL https://get.pulumi.com | sh
+ENV PATH="${PATH}:/root/.pulumi/bin"
+
+CMD [ "bash" ]

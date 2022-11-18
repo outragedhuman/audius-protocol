@@ -2,6 +2,8 @@
 
 set -e
 
+RUSTFLAGS='-L /lib/aarch64-linux-gnu'
+
 function replace_address {
     current_address=$(grep -Po '(?<=declare_id!\(").*(?=")' $1)
     new_address=$(solana address -k ${@: -1})
@@ -47,7 +49,8 @@ replace_address \
     anchor/audius-data/Anchor.toml \
     ${CARGO_TARGET_DIR:-anchor/audius-data/target}/deploy/audius_data-keypair.json
 
-cargo build-bpf
+# cargo build-bpf
+cargo build-bpf --bpf-sdk=/workspace/solana/sdk/bpf/ -- -L /lib/aarch64-linux-gnu
 cargo install --debug --target-dir ./target --path cli
 cargo install --debug --target-dir ./target --path reward-manager/cli
 cargo install --debug --target-dir ./target --path claimable-tokens/cli
