@@ -3,5 +3,6 @@
     "dockerComposeFile": ["../docker-compose.yml"],
     "service": "discovery-provider",
     "shutdownAction": "none",
-    "workspaceFolder": "/audius-discovery-provider"
+    "workspaceFolder": "/audius-discovery-provider",
+    "extensions": ["ms-python.python"]
 }
