@@ -86,31 +86,25 @@ const sendTransaction = async (
 }
 
 const sendTransactionInternal = async (req, web3, txProps, reqBodySHA) => {
-  let {
+  const {
     contractRegistryKey,
     contractAddress,
-    nethermindContractAddress,
     encodedABI,
-    nethermindEncodedABI,
     senderAddress,
     gasLimit
   } = txProps
   const redis = req.app.get('redis')
 
-  // SEND to both nethermind and POA
-  // sendToNethermindOnly indicates relay should respond with that receipt
-  const currentBlock = await web3.eth.getBlockNumber()
-  const finalPOABlock = config.get('finalPOABlock')
-  let sendToNethermindOnly = finalPOABlock
-    ? currentBlock > finalPOABlock
-    : false
-
-  // force staging to use nethermind since it hasn't surpassed finalPOABlock
-  // prod will surpass
-
+  // SEND to either POA or Nethermind here...
+  let sendToNethermind = false
   if (config.get('environment') === 'staging') {
-    sendToNethermindOnly = true
+    sendToNethermind = true
+  } else {
+    const currentBlock = await web3.eth.getBlockNumber()
+    const finalPOABlock = config.get('finalPOABlock')
+    sendToNethermind = finalPOABlock ? currentBlock > finalPOABlock : false
   }
+
   const existingTx = await models.Transaction.findOne({
     where: {
       encodedABI: encodedABI // this should always be unique because of the nonce / sig
@@ -135,7 +129,7 @@ const sendTransactionInternal = async (req, web3, txProps, reqBodySHA) => {
   let wallet = await selectWallet()
 
   // If all wallets are currently in use, keep iterating until a wallet is freed up
-  while (!wallet) {
+  while (!sendToNethermind && !wallet) {
     await delay(200)
     wallet = await selectWallet()
   }
@@ -145,61 +139,23 @@ const sendTransactionInternal = async (req, web3, txProps, reqBodySHA) => {
       `L2 - txRelay - selected wallet ${wallet.publicKey} for sender ${senderAddress}`
     )
 
-    // send to POA
-    // PROD doesn't have sendToNethermindOnly and should default to POA
-    // STAGE defaults to nethermind but can send to POA when it has both addresses
-    const relayPromises = []
-    if (
-      !sendToNethermindOnly ||
-      (sendToNethermindOnly && nethermindContractAddress)
-    ) {
-      relayPromises.push(
-        createAndSendTransaction(
-          wallet,
-          contractAddress,
-          '0x00',
-          web3,
-          req.logger,
-          gasLimit,
-          encodedABI
-        )
+    if (sendToNethermind) {
+      const ok = await relayToNethermind(encodedABI)
+      txParams = ok.txParams
+      txReceipt = ok.receipt
+    } else {
+      // use POA receipt as main receipt
+      const ok = await createAndSendTransaction(
+        wallet,
+        contractAddress,
+        '0x00',
+        web3,
+        req.logger,
+        gasLimit,
+        encodedABI
       )
-    }
-
-    // send to nethermind
-    // PROD doesn't have sendToNethermindOnly and only sends to nethermind when it has both addresses
-    // STAGE defaults to nethermind
-    if (
-      sendToNethermindOnly ||
-      (!sendToNethermindOnly && nethermindContractAddress)
-    ) {
-      if (!nethermindContractAddress) {
-        nethermindContractAddress = contractAddress
-        nethermindEncodedABI = encodedABI
-      }
-      relayPromises.push(
-        relayToNethermind(nethermindEncodedABI, nethermindContractAddress)
-      )
-    }
-    const relayTxs = await Promise.allSettled(relayPromises)
-
-    if (relayTxs.length === 1) {
-      txParams = relayTxs[0].value.txParams
-      txReceipt = relayTxs[0].value.receipt
-    } else if (relayTxs.length === 2) {
-      const [poaTx, nethermindTx] = relayTxs.map((result) => result?.value)
-      console.log(
-        `txRelay - poaTx: ${JSON.stringify(
-          poaTx?.txParams
-        )} | nethermindTx: ${JSON.stringify(nethermindTx?.txParams)}`
-      )
-      if (sendToNethermindOnly) {
-        txParams = nethermindTx.txParams
-        txReceipt = nethermindTx.receipt
-      } else {
-        txParams = poaTx.txParams
-        txReceipt = poaTx.receipt
-      }
+      txParams = ok.txParams
+      txReceipt = ok.receipt
     }
 
     redisLogParams = {
@@ -444,7 +400,7 @@ const createAndSendTransaction = async (
 
 let inFlight = 0
 
-async function relayToNethermind(encodedABI, contractAddress) {
+async function relayToNethermind(encodedABI) {
   // generate a new private key per transaction (gas is free)
   const accounts = new Accounts(config.get('nethermindWeb3Provider'))
 
@@ -454,7 +410,7 @@ async function relayToNethermind(encodedABI, contractAddress) {
 
   try {
     const transaction = {
-      to: contractAddress,
+      to: config.get('entityManagerAddress'),
       value: 0,
       gas: '100880',
       gasPrice: 0,
@@ -490,6 +446,7 @@ async function relayToNethermind(encodedABI, contractAddress) {
     }
   } catch (err) {
     console.log('relayToNethermind error:', err.toString())
+    throw err
   }
 }
 
